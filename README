@@ -1,0 +1,23 @@
+README for Asink project
+Copyright (C) 2011 Aaron Lindsay <aaron@aclindsay.com>
+
+Created: June 5, 2011
+
+
+What is Asink?
+==============
+
+Asink is intended to be yet another Dropbox clone. Why? Well, I didn't like any of the others out there.
+
+It is still very much a work in progress, and I will update this file with more information as development proceeds.
+
+
+Installation
+============
+
+Please see the INSTALL file in this directory for more details.
+
+License
+=======
+
+Asink is distributed under the GPLv2 license. See COPYING for more information.
