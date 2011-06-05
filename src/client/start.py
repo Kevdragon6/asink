@@ -18,11 +18,16 @@
 import os
 import signal
 import sys
+import time
+from Queue import Queue
 
+from core import CoreEventLoop
 import constants
 from config import Config
+import watcher
 
 def main():
+    global coreloop
     setup_signals()
 
     #TODO implement this
@@ -31,8 +36,17 @@ def main():
     #pull changes from server
     #run initial indexer
     #begin handling incoming inotify events, and longpolling info from server
+    q = Queue()
 
-    Config().write()
+    watcher.start_watching(q)
+
+    coreloop = CoreEventLoop()
+    coreloop.set_event_queue(q)
+    coreloop.start()
+
+    #sleep until signaled, which will call sig_handler
+    while True:
+        time.sleep(86400) #= 24 hours just for fun
 
 def setup_signals():
     signal.signal(signal.SIGABRT, sig_handler)
@@ -40,6 +54,9 @@ def setup_signals():
     signal.signal(signal.SIGINT, sig_handler)
 
 def sig_handler(signum, frame):
+    global coreloop
+    watcher.stop_watching()
+    coreloop.stop()
     Config().write() #write any changes to the config out to the config file
     sys.exit(0)
 
