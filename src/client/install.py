@@ -22,15 +22,14 @@ import constants
 from config import Config
 
 def main():
-    config = Config(constants.configfile)
     #make sure directories exist
     if not os.path.isdir(constants.dotdir):
         os.mkdir(constants.dotdir)
-    if not os.path.isdir(config.syncdir):
-        os.mkdir(config.syncdir)
+    if not os.path.isdir(Config().syncdir):
+        os.mkdir(Config().syncdir)
 
     #create database and table
-    conn = sqlite3.connect(config.dbfile)
+    conn = sqlite3.connect(Config().dbfile)
     c = conn.cursor()
 
     #create 'files' table if it doesn't already exist
@@ -50,7 +49,7 @@ def main():
         c.execute("CREATE INDEX IF NOT EXISTS revidx on files (rev)")
         c.execute("CREATE INDEX IF NOT EXISTS pathidx on files (localpath)")
 
-    config.write() #write the config back out, so that if it didn't exist, it does now
+    Config().write() #write the config back out, so that if it didn't exist, it does now
 
 if __name__ == "__main__":
     main()

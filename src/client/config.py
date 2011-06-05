@@ -19,7 +19,7 @@ import ConfigParser
 
 import constants
 
-class Config:
+class _Config:
     #name of config file backing this object
     config_filename = constants.configfile
 
@@ -27,11 +27,10 @@ class Config:
     syncdir = os.path.join(constants.homedir, "Asink")
     dbfile = os.path.join(constants.dotdir, "fileinfo.db")
 
-    def __init__(self, filename=config_filename):
-        self.config_filename = filename
+    def __init__(self):
         self.parser = ConfigParser.SafeConfigParser()
         read = self.parser.read(self.config_filename)
-        if filename in read:
+        if self.config_filename in read:
             self.parse()
         #assume defaults if file doesn't exist
 
@@ -52,3 +51,8 @@ class Config:
                 self.write(True)
         with open(self.config_filename, 'wb') as configfile:
                 self.parser.write(configfile)
+
+#make Config class a singleton so we don't have a million instances of it
+_config_singleton = _Config()
+def Config():
+    return _config_singleton
