@@ -15,21 +15,36 @@
 
 import threading
 import Queue
-import time
+import urllib
+import urllib2
+import json
 
-import events
+from shared import events
 
 class CoreEventLoop(threading.Thread):
     stopped = False
-    def set_event_queue(self, queue):
-        self.queue = queue
+    def set_fs_events_queue(self, queue):
+        self.fs_queue = queue
     def stop(self):
         self.stopped = True
     def run(self):
         while not self.stopped:
-            try:
-                self.handle_event(self.queue.get(False))
-            except Queue.Empty:
+           try:
+                self.handle_event(self.fs_queue.get(False))
+           except Queue.Empty:
                 pass
     def handle_event(self, event):
+        s = json.dumps(event.tolist())
+        data = {"data": s}
+        encoded = urllib.urlencode(data)
+        print encoded
+        print urllib2.urlopen("http://localhost:8080/api", urllib.urlencode(data)).read()
+
+        #if delete, send to server right away
+        #else if update
+            #hash file, see if it matches any pre-existing stored files
+                #if so, put event in queue to be sent to server
+            #otherwise, put in queue to be uploaded
+                #when done, put it in queue to be sent to server
+
         print event

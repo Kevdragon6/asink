@@ -18,7 +18,7 @@ from Queue import Queue
 from time import time
 
 from config import Config
-from events import Event, EventType
+from shared.events import Event, EventType
 
 mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE | pyinotify.IN_MODIFY | pyinotify.IN_MOVED_TO | pyinotify.IN_MOVED_FROM # watched events
 

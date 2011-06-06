@@ -26,6 +26,8 @@ class _Config:
     #options that will be read
     syncdir = os.path.join(constants.homedir, "Asink")
     dbfile = os.path.join(constants.dotdir, "fileinfo.db")
+    server = "localhost"
+    port = 8080
 
     def __init__(self):
         self.parser = ConfigParser.SafeConfigParser()
@@ -38,6 +40,8 @@ class _Config:
         try:
             self.syncdir = self.parser.get('core', 'syncdir')
             self.dbfile = self.parser.get('core', 'dbfile')
+            self.server = self.parser.get('core', 'server')
+            self.port = self.parser.getint('core', 'port')
         except:
             logging.warning("Config file at "+self.config_filename+" improperly formatted. Using default config options.")
 
@@ -45,9 +49,14 @@ class _Config:
         try:
             self.parser.set('core', 'syncdir', self.syncdir)
             self.parser.set('core', 'dbfile', self.dbfile)
+            self.parser.set('core', 'server', self.server)
+            self.parser.set('core', 'port', str(self.port))
         except:
             if not second_try:
-                self.parser.add_section('core')
+                try:
+                    self.parser.add_section('core')
+                except ConfigParser.DuplicateSectionError:
+                    pass
                 self.write(True)
         with open(self.config_filename, 'wb') as configfile:
                 self.parser.write(configfile)

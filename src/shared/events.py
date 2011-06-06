@@ -13,6 +13,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import exceptions
+
 class EventType:
     #describe the change to the file
     UPDATE = 1 #used for create as well
@@ -45,3 +47,8 @@ class Event:
         else:
             s += " (remote)"
         return s
+
+    def tolist(self):
+        return [self.type, self.rev, self.hash, self.time, self.path, self.storagepath, self.permissions]
+    def fromlist(self, list):
+        self.type, self.rev, self.hash, self.time, self.path, self.storagepath, self.permissions = list

@@ -21,6 +21,9 @@ import sys
 import time
 from Queue import Queue
 
+#fixup python include path, so we can include other project directories
+sys.path.append(os.path.join(os.getcwd(), "../"))
+
 from core import CoreEventLoop
 import constants
 from config import Config
@@ -41,7 +44,7 @@ def main():
     watcher.start_watching(q)
 
     coreloop = CoreEventLoop()
-    coreloop.set_event_queue(q)
+    coreloop.set_fs_events_queue(q)
     coreloop.start()
 
     #sleep until signaled, which will call sig_handler
