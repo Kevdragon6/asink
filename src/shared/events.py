@@ -50,5 +50,12 @@ class Event:
 
     def tolist(self):
         return [self.type, self.rev, self.hash, self.time, self.path, self.storagepath, self.permissions]
-    def fromlist(self, list):
-        self.type, self.rev, self.hash, self.time, self.path, self.storagepath, self.permissions = list
+    def fromlist(self, l):
+        print "fromlist", l
+        self.type = int(l[0])
+        self.rev = long(l[1])
+        self.hash = str(l[2])
+        self.time = float(l[3])
+        self.path = str(l[4])
+        self.storagepath = str(l[5])
+        self.permissions = str(l[6])
