@@ -15,7 +15,6 @@
 
 import threading
 import Queue
-import urllib
 import urllib2
 import json
 
@@ -34,11 +33,8 @@ class CoreEventLoop(threading.Thread):
            except Queue.Empty:
                 pass
     def handle_event(self, event):
-        s = json.dumps(event.tolist())
-        data = {"data": s}
-        encoded = urllib.urlencode(data)
-        print encoded
-        print urllib2.urlopen("http://localhost:8080/api", urllib.urlencode(data)).read()
+        j = json.dumps([event.tolist()])
+        print urllib2.urlopen("http://localhost:8080/api", j).read()
 
         #if delete, send to server right away
         #else if update
