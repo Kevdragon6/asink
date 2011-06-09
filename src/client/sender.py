@@ -20,25 +20,17 @@ import json
 
 from shared import events
 
-class Hasher(threading.Thread):
+class Sender(threading.Thread):
     stopped = False
     def stop(self):
         self.stopped = True
     def run(self):
         while not self.stopped:
            try:
-                self.handle_event(self.wh_queue.get(True, 0.2))
+                self.handle_event(self.wus_queue.get(True, 0.2))
            except Queue.Empty:
                 pass
     def handle_event(self, event):
-        print "hasher", event
-        self.hu_queue.put(event)
-
-        #if delete, send to server right away
-        #else if update
-            #hash file, see if it matches any pre-existing stored files
-                #if so, put event in queue to be sent to server
-            #otherwise, put in queue to be uploaded
-                #when done, put it in queue to be sent to server
-
-        print event
+        print "sender", event
+        j = json.dumps([event.tolist()])
+        print urllib2.urlopen("http://localhost:8080/api", j).read()

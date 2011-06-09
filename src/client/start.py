@@ -24,13 +24,15 @@ from Queue import Queue
 #fixup python include path, so we can include other project directories
 sys.path.append(os.path.join(os.getcwd(), "../"))
 
-from hasher import Hasher
 import constants
 from config import Config
 import watcher
+from hasher import Hasher
+from uploader import Uploader
+from sender import Sender
 
 def main():
-    global hasher
+    global hasher, uploader, sender
     setup_signals()
 
     #TODO implement this
@@ -39,13 +41,31 @@ def main():
     #pull changes from server
     #run initial indexer
     #begin handling incoming inotify events, and longpolling info from server
-    q = Queue()
 
-    watcher.start_watching(q)
-
+    #create all threads which will be used to process events
     hasher = Hasher()
-    hasher.set_queue(q)
+    uploader = Uploader()
+    sender = Sender()
+
+    #create and set up queues which are used to pass events between threads
+    wh_queue = Queue()
+    hasher.wh_queue = wh_queue
+    #set on watcher when initialized
+
+    hu_queue = Queue()
+    hasher.hu_queue = hu_queue
+    uploader.hu_queue = hu_queue
+
+    wus_queue = Queue()
+    watcher.wus_queue = wus_queue
+    uploader.wus_queue = wus_queue
+    sender.wus_queue = wus_queue
+
+    #start all threads
+    watcher.start_watching(wh_queue, wus_queue)
     hasher.start()
+    uploader.start()
+    sender.start()
 
     #sleep until signaled, which will call sig_handler
     while True:
@@ -57,9 +77,11 @@ def setup_signals():
     signal.signal(signal.SIGINT, sig_handler)
 
 def sig_handler(signum, frame):
-    global hasher
+    global hasher, uploader, sender
     watcher.stop_watching()
     hasher.stop()
+    uploader.stop()
+    sender.stop()
     Config().write() #write any changes to the config out to the config file
     sys.exit(0)
 

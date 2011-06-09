@@ -23,18 +23,16 @@ from shared.events import Event, EventType
 mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE | pyinotify.IN_MODIFY | pyinotify.IN_MOVED_TO | pyinotify.IN_MOVED_FROM # watched events
 
 class EventHandler(pyinotify.ProcessEvent):
-    def set_event_queue(self, queue):
-        self.queue = queue
     def enqueue_modify(self, path):
         e = Event(EventType.UPDATE | EventType.LOCAL)
         e.path = path
         e.time = time()
-        self.queue.put(e, True)
+        self.wh_queue.put(e, True)
     def enqueue_delete(self, path):
         e = Event(EventType.DELETE | EventType.LOCAL)
         e.path = path
         e.time = time()
-        self.queue.put(e, True)
+        self.wus_queue.put(e, True)
     def process_IN_CREATE(self, event):
         self.enqueue_modify(event.pathname)
     def process_IN_MODIFY(self, event):
@@ -46,11 +44,12 @@ class EventHandler(pyinotify.ProcessEvent):
     def process_IN_MOVED_FROM(self, event):
         self.enqueue_delete(event.pathname)
 
-def start_watching(q):
+def start_watching(wh_queue, wus_queue):
     global notifier, wm
     wm = pyinotify.WatchManager()  # Watch Manager
     eh = EventHandler()
-    eh.set_event_queue(q)
+    eh.wh_queue = wh_queue
+    eh.wus_queue = wus_queue
 
     notifier = pyinotify.ThreadedNotifier(wm, eh)
     notifier.start()
