@@ -24,13 +24,13 @@ from Queue import Queue
 #fixup python include path, so we can include other project directories
 sys.path.append(os.path.join(os.getcwd(), "../"))
 
-from core import CoreEventLoop
+from hasher import Hasher
 import constants
 from config import Config
 import watcher
 
 def main():
-    global coreloop
+    global hasher
     setup_signals()
 
     #TODO implement this
@@ -43,9 +43,9 @@ def main():
 
     watcher.start_watching(q)
 
-    coreloop = CoreEventLoop()
-    coreloop.set_fs_events_queue(q)
-    coreloop.start()
+    hasher = Hasher()
+    hasher.set_queue(q)
+    hasher.start()
 
     #sleep until signaled, which will call sig_handler
     while True:
@@ -57,9 +57,9 @@ def setup_signals():
     signal.signal(signal.SIGINT, sig_handler)
 
 def sig_handler(signum, frame):
-    global coreloop
+    global hasher
     watcher.stop_watching()
-    coreloop.stop()
+    hasher.stop()
     Config().write() #write any changes to the config out to the config file
     sys.exit(0)
 

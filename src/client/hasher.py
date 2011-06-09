@@ -20,16 +20,16 @@ import json
 
 from shared import events
 
-class CoreEventLoop(threading.Thread):
+class Hasher(threading.Thread):
     stopped = False
-    def set_fs_events_queue(self, queue):
-        self.fs_queue = queue
+    def set_queue(self, queue):
+        self.queue = queue
     def stop(self):
         self.stopped = True
     def run(self):
         while not self.stopped:
            try:
-                self.handle_event(self.fs_queue.get(False))
+                self.handle_event(self.queue.get(True, 0.2))
            except Queue.Empty:
                 pass
     def handle_event(self, event):
