@@ -22,14 +22,15 @@ class EventType:
     #describe where this change originated
     LOCAL  = 4
     REMOTE = 8
-    
+
 class Event:
     type = EventType.UPDATE
-    rev = 0   #revision number this corresponds to, 0 if local change only
-    hash = "" #hex of sha hash
-    time = 0  #unix timestamp
-    path = "" #local path to file
-    storagepath = "" #path or info related to storage
+    userid = 0  #userid of the owner of this file
+    rev = 0     #revision number this corresponds to, 0 if local change only
+    hash = ""   #hex of sha hash
+    time = 0    #unix timestamp
+    path = ""   #local path to file
+    storagepath = "" #path or other info related to storage
     permissions = "" #permissions of file as of this change
 
     def __init__(self, event_type):
@@ -38,24 +39,32 @@ class Event:
         s = ""
         if self.type & EventType.UPDATE:
             s += "Update "
-        else:
+        elif self.type & EventType.DELETE:
             s += "Delete "
+        else:
+            s+= "No-action "
         s += self.path
         s += " at " + str(self.time)
         if self.type & EventType.LOCAL:
             s += " (local)"
-        else:
+        elif self.type & EventType.REMOTE:
             s += " (remote)"
+        else:
+            s += " (nowhere)"
         return s
 
     def tolist(self):
-        return [self.type, self.rev, self.hash, self.time, self.path, self.storagepath, self.permissions]
-    def fromlist(self, l):
-        print "fromlist", l
-        self.type = int(l[0])
-        self.rev = long(l[1])
-        self.hash = str(l[2])
-        self.time = float(l[3])
+        return [self.rev, self.userid, self.type, self.hash, self.path,
+                self.time, self.storagepath, self.permissions]
+    def totuple(self):
+        return (self.rev, self.userid, self.type, self.hash, self.path,
+                self.time, self.storagepath, self.permissions)
+    def fromseq(self, l):
+        self.rev = long(l[0])
+        self.userid = int(l[1])
+        self.type = int(l[2])
+        self.hash = str(l[3])
         self.path = str(l[4])
-        self.storagepath = str(l[5])
-        self.permissions = str(l[6])
+        self.time = float(l[5])
+        self.storagepath = str(l[6])
+        self.permissions = str(l[7])

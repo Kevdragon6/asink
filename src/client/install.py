@@ -32,22 +32,22 @@ def main():
     conn = sqlite3.connect(Config().dbfile)
     c = conn.cursor()
 
-    #create 'files' table if it doesn't already exist
-    c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='files';")
+    #create 'events' table if it doesn't already exist
+    c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='events';")
     if c.fetchone() is None: 
-        c.execute("""CREATE TABLE files (
+        c.execute("""CREATE TABLE events (
             rev INTEGER,
             user INTEGER,
+            type INTEGER,
             hash TEXT,
-            modified INTEGER,
             localpath TEXT,
+            modified INTEGER,
             storagepath TEXT,
             permissions INTEGER,
-            action INTEGER,
             status INTEGER)""")
         #make index on rev and localpath
-        c.execute("CREATE INDEX IF NOT EXISTS revidx on files (rev)")
-        c.execute("CREATE INDEX IF NOT EXISTS pathidx on files (localpath)")
+        c.execute("CREATE INDEX IF NOT EXISTS revidx on events (rev)")
+        c.execute("CREATE INDEX IF NOT EXISTS pathidx on events (localpath)")
 
     Config().write() #write the config back out, so that if it didn't exist, it does now
 

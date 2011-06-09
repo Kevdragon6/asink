@@ -37,18 +37,17 @@ class Database:
     def close(self):
         self.conn.close()
     def ensure_installed(self):
-        self.cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='files';")
+        self.cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='events';")
         if self.cursor.fetchone() is None:
-            self.cursor.execute("""CREATE TABLE files (
-                rev INTEGER,
+            self.cursor.execute("""CREATE TABLE events (
+                rev INTEGER PRIMARY KEY,
                 user INTEGER,
+                type INTEGER,
                 hash TEXT,
-                modified INTEGER,
                 localpath TEXT,
+                modified INTEGER,
                 storagepath TEXT,
-                permissions INTEGER,
-                action INTEGER,
-                status INTEGER)""")
+                permissions INTEGER)""")
             #make index on rev and localpath
-            self.cursor.execute("CREATE INDEX IF NOT EXISTS revidx on files (rev)")
-            self.cursor.execute("CREATE INDEX IF NOT EXISTS pathidx on files (localpath)")
+            self.cursor.execute("CREATE INDEX IF NOT EXISTS revidx on events (rev)")
+            self.cursor.execute("CREATE INDEX IF NOT EXISTS pathidx on events (localpath)")
