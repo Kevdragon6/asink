@@ -18,25 +18,32 @@ import json
 from shared import events
 
 def web(r):
+    """Handle web requests for the web interface"""
     r.send_response(200)
     r.end_headers()
     r.wfile.write("Web interface not yet implemented, sorry!\n")
 
-def api(r):
+def dataParseError(r):
+    r.send_response(400)
+    r.end_headers()
+
+def api(r, database):
+    """Handle HTTP requests send to <hostname:port>/api endpoint -
+    namely update and delete events for files."""
     data = None
     try:
         length = int(r.headers['Content-Length'])
         j = r.rfile.read(length)
         data = json.loads(j)
-    except:
-        r.send_response(400)
-        r.end_headers()
-        return
 
-    for e in data:
+        query = "INSERT INTO events VALUES (NULL,?,?,?,?,?,?,?)"
         event = events.Event(0)
-        event.fromlist(e)
-        print event
+        for e in data:
+            event.fromseq(e)
+            database.execute(query, event.totuple()[1:])
+        database.commit()
+    except:
+        return dataParseError(r)
+
     r.send_response(200)
     r.end_headers()
-    r.wfile.write("API YAAAYA!\n")

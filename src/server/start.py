@@ -30,11 +30,12 @@ from handlers import api, web
 NUM_PROCESSES = 1 #keep it simple for starters
 
 class Handler(BaseHTTPRequestHandler):
+    global database
     def do_POST(self):
         self.do_GET()
     def do_GET(self):
         if re.match("^/api/?$", self.path):
-            api(self)
+            api(self, database)
         else:
             web(self)
 
