@@ -51,6 +51,8 @@ class Event:
             s += " (remote)"
         else:
             s += " (nowhere)"
+        if self.hash is not "":
+            s += " - "+self.hash
         return s
 
     def tolist(self):

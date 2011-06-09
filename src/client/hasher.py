@@ -15,10 +15,12 @@
 
 import threading
 import Queue
-import urllib2
-import json
+import hashlib
 
 from shared import events
+
+hashfn = hashlib.sha256()
+blocksize = 2**15 #seems to be the fastest chunk size on my laptop
 
 class Hasher(threading.Thread):
     stopped = False
@@ -30,15 +32,17 @@ class Hasher(threading.Thread):
                 self.handle_event(self.wh_queue.get(True, 0.2))
            except Queue.Empty:
                 pass
+
     def handle_event(self, event):
-        print "hasher", event
-        self.hu_queue.put(event)
+        try:
+            event.hash = self.hash(event.path)
+            self.hu_queue.put(event)
+        except:
+            print "Error hashing file:"
+            print event,
 
-        #if delete, send to server right away
-        #else if update
-            #hash file, see if it matches any pre-existing stored files
-                #if so, put event in queue to be sent to server
-            #otherwise, put in queue to be uploaded
-                #when done, put it in queue to be sent to server
-
-        print event
+    def hash(self, filename):
+        with open(filename,'rb') as f:
+            for chunk in iter(lambda: f.read(blocksize), ''):
+                 hashfn.update(chunk)
+        return hashfn.hexdigest()
