@@ -15,7 +15,8 @@
 
 import threading
 import Queue
-import urllib2
+from shutil import copyfile, copymode, copystat
+from os import path
 
 from shared import events
 
@@ -30,5 +31,14 @@ class Uploader(threading.Thread):
            except Queue.Empty:
                 pass
     def handle_event(self, event):
-        print "uploader", event
-        self.wus_queue.put(event)
+        #fake uploader for now by 'uploading' to local directory by hash
+        src = event.path
+        dst = path.join("/home/aclindsa/asink_scratch", event.hash)
+        try:
+            copyfile(src, dst)
+            copymode(src, dst)
+            copystat(src, dst)
+            self.wus_queue.put(event)
+        except:
+            print "Error uploading file:"
+            print event,
