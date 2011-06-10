@@ -31,14 +31,13 @@ class Receiver(threading.Thread):
         self.database = Database()
         while not self.stopped:
             response = urllib2.urlopen("http://localhost:8080/api/updates/"+str(self.get_last_rev()), None, POLLING_TIMEOUT)
-            #events = json.loads(response.read())
-            events = []
+            events = json.loads(response.read())
             if len(events) > 0:
                 self.handle_events(events)
     def get_last_rev(self):
         return 0 #TODO implement me
-    def handle_events(self, events):
-        for e in events:
-            event = Event(0)
+    def handle_events(self, es):
+        for e in es:
+            event = events.Event(0)
             event.fromseq(e)
             print "received", event

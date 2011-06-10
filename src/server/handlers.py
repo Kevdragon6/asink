@@ -27,10 +27,33 @@ class WebHandler(tornado.web.RequestHandler):
     def get(self):
         self.write("Web interface not yet implemented, sorry\n")
 
-class EventsHandler(tornado.web.RequestHandler):
-    """Handle HTTP requests send to <hostname:port>/api endpoint -
+class UpdatesMixin(object):
+    waiters = {}
+    waiters_lock = threading.Lock() #TODO make locking per-userid
+    def wait_for_updates(self, userid, callback):
+        cls = UpdatesMixin
+        cls.waiters_lock.acquire()
+        if userid in cls.waiters:
+            cls.waiters[userid].append(callback)
+        else:
+            cls.waiters[userid] = [callback]
+        cls.waiters_lock.release()
+    def updates_ready(self, userid, events):
+        cls = UpdatesMixin
+        cls.waiters_lock.acquire()
+        if userid in cls.waiters:
+            for callback in cls.waiters[userid]:
+                callback(events)
+            cls.waiters[userid] = []
+        cls.waiters_lock.release()
+
+
+class EventsHandler(tornado.web.RequestHandler, UpdatesMixin):
+    """Handle HTTP requests sent to <hostname:port>/api endpoint -
     namely update and delete events for files."""
     def post(self):
+        #TODO - actually get their userid here
+        userid = 0
         try:
             j = self.get_argument("data")
             data = json.loads(j)
@@ -40,20 +63,28 @@ class EventsHandler(tornado.web.RequestHandler):
                 event.fromseq(e)
                 local.database.execute(query, event.totuple()[1:])
             local.database.commit()
-            #TODO see if there are any long-polling connections waiting on input from
-                #this user. If there are, write these events out to them, and close
-                #those connections
+            self.updates_ready(userid, data) #send updates to any waiting
+                #long-polling connections
         except Exception as e:
             print type(e)
             print e.args
             print e
             raise tornado.web.HTTPError(400)
 
-class PollingHandler(tornado.web.RequestHandler):
+class PollingHandler(tornado.web.RequestHandler, UpdatesMixin):
+    """Handle long-polling HTTP requests sent to
+    <hostname:port>/api/updates/<lastrev> endpoint"""
+    @tornado.web.asynchronous
     def get(self, lastrev):
         #TODO - actually get their userid here
         userid = 0
         #TODO check and see if there are already updates waiting on this user.
             #If there are, return them and don't mess with keeping this connection
             #around.
-        self.write("Hello, world "+str(lastrev))
+        self.wait_for_updates(userid, self.async_callback(self.on_new_events))
+
+    def on_new_events(self, events):
+        if self.request.connection.stream.closed():
+            return
+        self.write(json.dumps(events))
+        self.finish()
