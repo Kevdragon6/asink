@@ -20,8 +20,12 @@ import json
 
 from shared import events
 
+MAX_TO_QUEUE = 100  #The maximum number of events to queue before sending them to
+                    #the server
+
 class Sender(threading.Thread):
     stopped = False
+    to_send = [] #list of events to send to the server
     def stop(self):
         self.stopped = True
     def run(self):
@@ -29,8 +33,14 @@ class Sender(threading.Thread):
            try:
                 self.handle_event(self.wus_queue.get(True, 0.2))
            except Queue.Empty:
-                pass
-    def handle_event(self, event):
-        print "sender", event
-        j = json.dumps([event.tolist()])
-        print urllib2.urlopen("http://localhost:8080/api", j).read()
+               if len(self.to_send) > 0:
+                   self.handle_event(None, True)
+
+    def handle_event(self, event, finalize=False):
+        if event:
+            print "sending", event
+            self.to_send.append(event.tolist())
+        if finalize or len(self.to_send) >= MAX_TO_QUEUE:
+            j = json.dumps(self.to_send)
+            urllib2.urlopen("http://localhost:8080/api", j).read()
+            self.to_send = []
