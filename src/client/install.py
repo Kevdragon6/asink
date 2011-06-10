@@ -28,28 +28,7 @@ def main():
     if not os.path.isdir(Config().syncdir):
         os.mkdir(Config().syncdir)
 
-    #create database and table
-    conn = sqlite3.connect(Config().dbfile)
-    c = conn.cursor()
-
-    #create 'events' table if it doesn't already exist
-    c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='events';")
-    if c.fetchone() is None: 
-        c.execute("""CREATE TABLE events (
-            rev INTEGER,
-            user INTEGER,
-            type INTEGER,
-            hash TEXT,
-            localpath TEXT,
-            modified INTEGER,
-            storagepath TEXT,
-            permissions INTEGER,
-            status INTEGER)""")
-        #make index on rev and localpath
-        c.execute("CREATE INDEX IF NOT EXISTS revidx on events (rev)")
-        c.execute("CREATE INDEX IF NOT EXISTS pathidx on events (localpath)")
-
-    Config().write() #write the config back out, so that if it didn't exist, it does now
+        Config().write() #write the config back out, so that if it didn't exist, it does now
 
 if __name__ == "__main__":
     main()
