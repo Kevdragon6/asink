@@ -26,12 +26,12 @@ class Hasher(threading.Thread):
     stopped = False
     def stop(self):
         self.stopped = True
+        self.wh_queue.put(None)
     def run(self):
         while not self.stopped:
-           try:
-                self.handle_event(self.wh_queue.get(True, 0.2))
-           except Queue.Empty:
-                pass
+            event = self.wh_queue.get(True)
+            if event:
+                self.handle_event(event)
 
     def handle_event(self, event):
         try:
