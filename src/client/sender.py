@@ -15,6 +15,7 @@
 
 import threading
 import Queue
+import urllib
 import urllib2
 import json
 
@@ -42,5 +43,6 @@ class Sender(threading.Thread):
             self.to_send.append(event.tolist())
         if finalize or len(self.to_send) >= MAX_TO_QUEUE:
             j = json.dumps(self.to_send)
-            urllib2.urlopen("http://localhost:8080/api", j).read()
+            urlencoded = urllib.urlencode({"data": j})
+            urllib2.urlopen("http://localhost:8080/api", urlencoded).read()
             self.to_send = []

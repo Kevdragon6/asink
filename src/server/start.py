@@ -17,44 +17,21 @@
 
 import sys
 import os
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-import multiprocessing
-import re
+import tornado.ioloop
+import tornado.web
 
 #fixup python include path, so we can include other project directories
 sys.path.append(os.path.join(os.getcwd(), "../"))
 
 from database import Database
-from handlers import api, web
+from handlers import WebHandler, EventsHandler, PollingHandler
 
-NUM_PROCESSES = 1 #keep it simple for starters
-
-class Handler(BaseHTTPRequestHandler):
-    global database
-    def do_POST(self):
-        self.do_GET()
-    def do_GET(self):
-        if re.match("^/api/?$", self.path):
-            api(self, database)
-        else:
-            web(self)
-
-def serve(server):
-    global database
-    database = Database()
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-
-def start_server(host, port):
-    server = HTTPServer((host, port), Handler)
-    processes = []
-
-    for i in range(NUM_PROCESSES-1):
-        processes.append(multiprocessing.Process(target=serve, args=(server,)))
-        processes[i].start()
-    serve(server)
+application = tornado.web.Application([
+    (r"/", WebHandler),
+    (r"/api/?", EventsHandler),
+    (r"/api/updates/([0-9]+)", PollingHandler),
+])
 
 if __name__ == "__main__":
-    start_server('localhost', 8080)
+    application.listen(8080)
+    tornado.ioloop.IOLoop.instance().start()

@@ -2,3 +2,4 @@ Installation requirements:
 - python v2.7
 - pyinotify
 - sqlite3
+- Tornado and its dependencies (python-pycurl). Available at http://www.tornadoweb.org/.

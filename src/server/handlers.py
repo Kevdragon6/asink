@@ -14,36 +14,46 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
+import tornado.web
+import threading
 
 from shared import events
+from database import Database
 
-def web(r):
-    """Handle web requests for the web interface"""
-    r.send_response(200)
-    r.end_headers()
-    r.wfile.write("Web interface not yet implemented, sorry!\n")
+local = threading.local()
+local.database = Database()
 
-def dataParseError(r):
-    r.send_response(400)
-    r.end_headers()
+class WebHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write("Web interface not yet implemented, sorry\n")
 
-def api(r, database):
+class EventsHandler(tornado.web.RequestHandler):
     """Handle HTTP requests send to <hostname:port>/api endpoint -
     namely update and delete events for files."""
-    data = None
-    try:
-        length = int(r.headers['Content-Length'])
-        j = r.rfile.read(length)
-        data = json.loads(j)
+    def post(self):
+        try:
+            j = self.get_argument("data")
+            data = json.loads(j)
+            query = "INSERT INTO events VALUES (NULL,?,?,?,?,?,?,?)"
+            event = events.Event(0)
+            for e in data:
+                event.fromseq(e)
+                local.database.execute(query, event.totuple()[1:])
+            local.database.commit()
+            #TODO see if there are any long-polling connections waiting on input from
+                #this user. If there are, write these events out to them, and close
+                #those connections
+        except Exception as e:
+            print type(e)
+            print e.args
+            print e
+            raise tornado.web.HTTPError(400)
 
-        query = "INSERT INTO events VALUES (NULL,?,?,?,?,?,?,?)"
-        event = events.Event(0)
-        for e in data:
-            event.fromseq(e)
-            database.execute(query, event.totuple()[1:])
-        database.commit()
-    except:
-        return dataParseError(r)
-
-    r.send_response(200)
-    r.end_headers()
+class PollingHandler(tornado.web.RequestHandler):
+    def get(self, lastrev):
+        #TODO - actually get their userid here
+        userid = 0
+        #TODO check and see if there are already updates waiting on this user.
+            #If there are, return them and don't mess with keeping this connection
+            #around.
+        self.write("Hello, world "+str(lastrev))
