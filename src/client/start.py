@@ -31,8 +31,10 @@ from hasher import Hasher
 from uploader import Uploader
 from sender import Sender
 
+from receiver import Receiver
+
 def main():
-    global hasher, uploader, sender
+    global hasher, uploader, sender, receiver
     setup_signals()
 
     #TODO implement this
@@ -46,6 +48,7 @@ def main():
     hasher = Hasher()
     uploader = Uploader()
     sender = Sender()
+    receiver = Receiver()
 
     #create and set up queues which are used to pass events between threads
     wh_queue = Queue()
@@ -66,6 +69,7 @@ def main():
     hasher.start()
     uploader.start()
     sender.start()
+    receiver.start()
 
     #sleep until signaled, which will call sig_handler
     while True:
@@ -77,7 +81,9 @@ def setup_signals():
     signal.signal(signal.SIGINT, sig_handler)
 
 def sig_handler(signum, frame):
-    global hasher, uploader, sender
+    global hasher, uploader, sender, receiver
+    receiver.stop() #stop the receiver first, because it could take a while to
+        #finish its last poll
     watcher.stop_watching()
     hasher.stop()
     uploader.stop()
