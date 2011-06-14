@@ -53,7 +53,13 @@ class Event:
             s += " (nowhere)"
         if self.hash is not "":
             s += " - "+self.hash
+        s+= " rev "+str(self.rev)
         return s
+    def __eq__(self, other):
+        return (self.type == other.type and self.userid == other.userid and
+                self.rev == other.rev and self.hash == other.hash and self.time
+                == other.time and self.path == other.path and self.storagepath
+                == other.storagepath and self.permissions == other.permissions)
 
     def tolist(self):
         return [self.rev, self.userid, self.type, self.hash, self.path,
