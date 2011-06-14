@@ -16,33 +16,40 @@
 import threading
 import Queue
 from shutil import copyfile, copymode, copystat
-from os import path
+from os import path, remove
 
 from shared import events
 from config import Config
 
-class Uploader(threading.Thread):
+class Downloader(threading.Thread):
     stopped = False
     def stop(self):
         self.stopped = True
-        self.hu_queue.put(None)
+        self.rd_queue.put(None)
     def run(self):
         while not self.stopped:
-            event = self.hu_queue.get(True)
+            event = self.rd_queue.get(True)
             if event:
                 self.handle_event(event)
 
     def handle_event(self, event):
         #fake uploader for now by 'uploading' to local directory by hash
-        src = path.join(Config().syncdir, event.path)
-        dst = path.join("/home/aclindsa/asink_scratch", event.hash)
+        src = path.join("/home/aclindsa/asink_scratch", event.hash)
+        dst = path.join(Config().syncdir, event.path)
+
+        #TODO downloaded files should probably be cached locally
+        #TODO make sure deleted files are cached locally if they're not yet
+            #stored online
+        if event.type & events.EventType.DELETE != 0:
+            if path.exists(dst):
+                remove(event.path)
+            return
+
         try:
             copyfile(src, dst)
             copymode(src, dst)
             copystat(src, dst)
-            self.wuhs_queue.put(event)
-        except Exception as e:
-            print e
-            print e.message
-            print "Error uploading file:"
+            self.wus_queue.put(event)
+        except:
+            print "Error downloading file:"
             print event

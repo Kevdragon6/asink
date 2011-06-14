@@ -16,6 +16,7 @@
 import pyinotify
 from Queue import Queue
 from time import time
+from os import path
 
 from config import Config
 from shared.events import Event, EventType
@@ -25,14 +26,14 @@ mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE | pyinotify.IN_MODIFY | pyinoti
 class EventHandler(pyinotify.ProcessEvent):
     def enqueue_modify(self, path):
         e = Event(EventType.UPDATE | EventType.LOCAL)
-        e.path = path
+        e.path = get_rel_path(path)
         e.time = time()
         self.wh_queue.put(e, True)
     def enqueue_delete(self, path):
         e = Event(EventType.DELETE | EventType.LOCAL)
-        e.path = path
+        e.path = get_rel_path(path)
         e.time = time()
-        self.wus_queue.put(e, True)
+        self.wuhs_queue.put(e, True)
     def process_IN_CREATE(self, event):
         self.enqueue_modify(event.pathname)
     def process_IN_MODIFY(self, event):
@@ -44,12 +45,15 @@ class EventHandler(pyinotify.ProcessEvent):
     def process_IN_MOVED_FROM(self, event):
         self.enqueue_delete(event.pathname)
 
-def start_watching(wh_queue, wus_queue):
+def get_rel_path(file):
+    return path.relpath(file, Config().syncdir)
+
+def start_watching(wh_queue, wuhs_queue):
     global notifier, wm
     wm = pyinotify.WatchManager()  # Watch Manager
     eh = EventHandler()
     eh.wh_queue = wh_queue
-    eh.wus_queue = wus_queue
+    eh.wuhs_queue = wuhs_queue
 
     notifier = pyinotify.ThreadedNotifier(wm, eh)
     notifier.start()

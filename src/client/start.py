@@ -32,9 +32,10 @@ from uploader import Uploader
 from sender import Sender
 
 from receiver import Receiver
+from downloader import Downloader
 
 def main():
-    global hasher, uploader, sender, receiver
+    global hasher, uploader, sender, receiver, downloader
     setup_signals()
 
     #TODO implement this
@@ -49,6 +50,7 @@ def main():
     uploader = Uploader()
     sender = Sender()
     receiver = Receiver()
+    downloader = Downloader()
 
     #create and set up queues which are used to pass events between threads
     wh_queue = Queue()
@@ -59,17 +61,23 @@ def main():
     hasher.hu_queue = hu_queue
     uploader.hu_queue = hu_queue
 
-    wus_queue = Queue()
-    watcher.wus_queue = wus_queue
-    uploader.wus_queue = wus_queue
-    sender.wus_queue = wus_queue
+    wuhs_queue = Queue()
+    watcher.wuhs_queue = wuhs_queue
+    uploader.wuhs_queue = wuhs_queue
+    hasher.wuhs_queue = wuhs_queue
+    sender.wuhs_queue = wuhs_queue
+
+    rd_queue = Queue()
+    receiver.rd_queue = rd_queue
+    downloader.rd_queue = rd_queue
 
     #start all threads
-    watcher.start_watching(wh_queue, wus_queue)
+    watcher.start_watching(wh_queue, wuhs_queue)
     hasher.start()
     uploader.start()
     sender.start()
     receiver.start()
+    downloader.start()
 
     #sleep until signaled, which will call sig_handler
     while True:
@@ -88,6 +96,7 @@ def sig_handler(signum, frame):
     hasher.stop()
     uploader.stop()
     sender.stop()
+    downloader.stop()
     Config().write() #write any changes to the config out to the config file
     sys.exit(0)
 

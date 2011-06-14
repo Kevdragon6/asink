@@ -20,6 +20,7 @@ import sqlite3
 
 import constants
 from config import Config
+from database import Database
 
 def main():
     #make sure directories exist
@@ -28,7 +29,10 @@ def main():
     if not os.path.isdir(Config().syncdir):
         os.mkdir(Config().syncdir)
 
-        Config().write() #write the config back out, so that if it didn't exist, it does now
+    #create the database object so it will automatically create its database
+    database = Database()
+
+    Config().write() #write the config back out, so that if it didn't exist, it does now
 
 if __name__ == "__main__":
     main()

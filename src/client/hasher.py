@@ -16,8 +16,11 @@
 import threading
 import Queue
 import hashlib
+from os import path
 
+from database import Database
 from shared import events
+from config import Config
 
 hashfn = hashlib.sha256()
 blocksize = 2**15 #seems to be the fastest chunk size on my laptop
@@ -28,6 +31,7 @@ class Hasher(threading.Thread):
         self.stopped = True
         self.wh_queue.put(None)
     def run(self):
+        self.database = Database()
         while not self.stopped:
             event = self.wh_queue.get(True)
             if event:
@@ -35,14 +39,28 @@ class Hasher(threading.Thread):
 
     def handle_event(self, event):
         try:
-            event.hash = self.hash(event.path)
-            self.hu_queue.put(event)
-        except:
-            print "Error hashing file:"
-            print event,
+            filepath = path.join(Config().syncdir, event.path)
+            event.hash = hash(filepath)
+            res = self.database.execute("SELECT * FROM events WHERE hash=?",
+                                       (event.hash,))
+            needsUpload = not next(res, None)
 
-    def hash(self, filename):
-        with open(filename,'rb') as f:
-            for chunk in iter(lambda: f.read(blocksize), ''):
-                 hashfn.update(chunk)
-        return hashfn.hexdigest()
+            #add event to the database
+            self.database.execute("INSERT INTO events VALUES (0,?,?,?,?,?,?,?)",
+                                  event.totuple()[1:])
+
+            if needsUpload:
+                self.hu_queue.put(event)
+            else:
+                self.wuhs_queue.put(event) #TODO check to make sure files
+                                           #match, not just hashes
+        except Exception as e:
+            print e.message
+            print "Error hashing file:"
+            print event
+
+def hash(filename):
+    with open(filename,'rb') as f:
+        for chunk in iter(lambda: f.read(blocksize), ''):
+             hashfn.update(chunk)
+    return hashfn.hexdigest()
