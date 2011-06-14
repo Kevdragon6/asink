@@ -28,8 +28,16 @@ class Database:
         self.cursor = self.conn.cursor()
         self.ensure_installed()
     def execute(self, query, args):
-        self.cursor.execute(query, args)
+        for i in range(10):
+            try:
+                self.cursor.execute(query, args)
+                break
+            except OperationalError:
+                self.cursor.rollback()
+        self.commit()
         return cursor_generator(self.cursor)
+    def lastrowid(self):
+        return self.cursor.lastrowid
     def commit(self):
         self.conn.commit()
     def rollback(self):

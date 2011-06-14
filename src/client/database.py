@@ -29,7 +29,13 @@ class Database:
         self.cursor = self.conn.cursor()
         self.ensure_installed()
     def execute(self, query, args):
-        self.cursor.execute(query, args)
+        for i in range(10):
+            try:
+                self.cursor.execute(query, args)
+                break
+            except OperationalError:
+                self.cursor.rollback()
+        self.commit()
         return cursor_generator(self.cursor)
     def commit(self):
         self.conn.commit()
@@ -41,15 +47,14 @@ class Database:
         self.cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='events';")
         if self.cursor.fetchone() is None:
             self.cursor.execute("""CREATE TABLE events (
-            rev INTEGER,
-            user INTEGER,
-            type INTEGER,
-            hash TEXT,
-            localpath TEXT,
-            modified INTEGER,
-            storagepath TEXT,
-            permissions INTEGER,
-            status INTEGER)""")
+                rev INTEGER,
+                user INTEGER,
+                type INTEGER,
+                hash TEXT,
+                localpath TEXT,
+                modified INTEGER,
+                storagepath TEXT,
+                permissions INTEGER)""")
             #make index on rev and localpath
             self.cursor.execute("CREATE INDEX IF NOT EXISTS revidx on events (rev)")
             self.cursor.execute("CREATE INDEX IF NOT EXISTS pathidx on events (localpath)")
