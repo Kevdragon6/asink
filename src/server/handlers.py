@@ -62,13 +62,10 @@ class EventsHandler(tornado.web.RequestHandler, UpdatesMixin):
             for e in data:
                 event.fromseq(e)
                 local.database.execute(query, event.totuple()[1:])
-            local.database.commit()
+                e[0] = local.database.lastrowid()
             self.updates_ready(userid, data) #send updates to any waiting
                 #long-polling connections
-        except Exception as e:
-            print type(e)
-            print e.args
-            print e
+        except:
             raise tornado.web.HTTPError(400)
 
 class PollingHandler(tornado.web.RequestHandler, UpdatesMixin):
