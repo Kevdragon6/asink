@@ -22,7 +22,7 @@ from database import Database
 from shared import events
 from config import Config
 
-hashfn = hashlib.sha256()
+hashfn = hashlib.sha256
 blocksize = 2**15 #seems to be the fastest chunk size on my laptop
 
 class Hasher(threading.Thread):
@@ -55,12 +55,12 @@ class Hasher(threading.Thread):
                 self.wuhs_queue.put(event) #TODO check to make sure files
                                            #match, not just hashes
         except Exception as e:
-            print e.message
             print "Error hashing file:"
             print event
 
 def hash(filename):
+    fn = hashfn()
     with open(filename,'rb') as f:
         for chunk in iter(lambda: f.read(blocksize), ''):
-             hashfn.update(chunk)
-    return hashfn.hexdigest()
+             fn.update(chunk)
+    return fn.hexdigest()
