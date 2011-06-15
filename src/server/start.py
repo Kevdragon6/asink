@@ -34,4 +34,7 @@ application = tornado.web.Application([
 
 if __name__ == "__main__":
     application.listen(8080)
-    tornado.ioloop.IOLoop.instance().start()
+    try:
+        tornado.ioloop.IOLoop.instance().start()
+    except KeyboardInterrupt:
+        pass
