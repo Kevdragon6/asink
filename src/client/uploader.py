@@ -16,7 +16,7 @@
 import threading
 import Queue
 from shutil import copyfile, copymode, copystat
-from os import path
+from os import path, system
 
 from shared import events
 from config import Config
@@ -37,12 +37,11 @@ class Uploader(threading.Thread):
         src = path.join(Config().syncdir, event.path)
         dst = path.join("/home/aclindsa/asink_scratch", event.hash)
         try:
-            copyfile(src, dst)
-            copymode(src, dst)
-            copystat(src, dst)
+            system('scp "%s" "%s:%s"' % (src, "localhost", dst))
+#            copyfile(src, dst)
+#            copymode(src, dst)
+#            copystat(src, dst)
             self.wuhs_queue.put(event)
-        except Exception as e:
-            print e
-            print e.message
+        except:
             print "Error uploading file:"
             print event

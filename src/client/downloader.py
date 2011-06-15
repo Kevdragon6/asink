@@ -16,7 +16,7 @@
 import threading
 import Queue
 from shutil import copyfile, copymode, copystat
-from os import path, remove
+from os import path, remove, system
 
 from shared import events
 from config import Config
@@ -42,13 +42,17 @@ class Downloader(threading.Thread):
             #stored online
         if event.type & events.EventType.DELETE != 0:
             if path.exists(dst):
-                remove(event.path)
+                try:
+                    remove(dst)
+                except: #OSError from file not existing
+                    print "error removing ", event.path
             return
 
         try:
-            copyfile(src, dst)
-            copymode(src, dst)
-            copystat(src, dst)
+            system('scp "%s:%s" "%s"' % ("localhost", src, dst))
+#            copyfile(src, dst)
+#            copymode(src, dst)
+#            copystat(src, dst)
             self.wus_queue.put(event)
         except:
             print "Error downloading file:"
