@@ -33,8 +33,8 @@ class Database:
             try:
                 self.cursor.execute(query, args)
                 break
-            except OperationalError:
-                self.cursor.rollback()
+            except sqlite3.OperationalError:
+                self.rollback()
         self.commit()
         return cursor_generator(self.cursor)
     def commit(self):
