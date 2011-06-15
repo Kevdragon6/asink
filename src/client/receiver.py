@@ -21,6 +21,7 @@ from httplib import BadStatusLine
 
 from shared import events
 from database import Database
+from config import Config
 
 POLLING_TIMEOUT = 10 #number of seconds to wait for a response
 
@@ -32,7 +33,8 @@ class Receiver(threading.Thread):
         self.database = Database()
         while not self.stopped:
             try:
-                response = urllib2.urlopen("http://localhost:8080/api/updates/"+str(self.get_last_rev()), None, POLLING_TIMEOUT)
+                host = "http://%s:%s" % (Config().server, str(Config().port))
+                response = urllib2.urlopen(host+"/api/updates/"+str(self.get_last_rev()), None, POLLING_TIMEOUT)
                 events = json.loads(response.read())
                 if len(events) > 0:
                     self.handle_events(events)

@@ -20,6 +20,7 @@ import urllib2
 import json
 
 from shared import events
+from config import Config
 
 MAX_TO_QUEUE = 100  #The maximum number of events to queue before sending them to
                     #the server
@@ -44,5 +45,6 @@ class Sender(threading.Thread):
         if finalize or len(self.to_send) >= MAX_TO_QUEUE:
             j = json.dumps(self.to_send)
             urlencoded = urllib.urlencode({"data": j})
-            urllib2.urlopen("http://localhost:8080/api", urlencoded).read()
+            host = "http://%s:%s" % (Config().server, str(Config().port))
+            urllib2.urlopen(host+"/api", urlencoded).read()
             self.to_send = []
