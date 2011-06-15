@@ -17,6 +17,7 @@ import threading
 import Queue
 import urllib2
 import json
+from httplib import BadStatusLine
 
 from shared import events
 from database import Database
@@ -36,6 +37,8 @@ class Receiver(threading.Thread):
                 if len(events) > 0:
                     self.handle_events(events)
             except urllib2.URLError:
+                pass
+            except BadStatusLine:
                 pass
     def get_last_rev(self):
         return 0 #TODO implement me
