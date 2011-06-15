@@ -41,6 +41,21 @@ class Hasher(threading.Thread):
         try:
             filepath = path.join(Config().syncdir, event.path)
             event.hash = hash(filepath)
+
+            #make sure the most recent version of this file doesn't match this one
+            #this protects against basically creating an infinite loop
+            res = self.database.execute("""SELECT * FROM events WHERE localpath=?
+                                        AND rev != 0 ORDER BY rev DESC LIMIT 1""", (event.path,))
+            latest = next(res, None)
+            if latest is not None:
+                e = events.Event(0)
+                e.fromseq(latest)
+                print "latest is not None"
+                print e
+                if e.hash == event.hash:
+                    print "returning because hashes are equal"
+                    return
+
             res = self.database.execute("SELECT * FROM events WHERE hash=?",
                                        (event.hash,))
             needsUpload = not next(res, None)
