@@ -46,7 +46,7 @@ class EventHandler(pyinotify.ProcessEvent):
         self.enqueue_delete(event.pathname)
 
 def get_rel_path(file):
-    return path.relpath(file, Config().syncdir)
+    return path.relpath(file, Config().get("core", "syncdir"))
 
 def start_watching(wh_queue, wuhs_queue):
     global notifier, wm
@@ -58,7 +58,7 @@ def start_watching(wh_queue, wuhs_queue):
     notifier = pyinotify.ThreadedNotifier(wm, eh)
     notifier.start()
 
-    add_watched_dir(Config().syncdir)
+    add_watched_dir(Config().get("core", "syncdir"))
 
 def add_watched_dir(directory):
     global wm

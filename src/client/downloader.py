@@ -35,7 +35,7 @@ class Downloader(threading.Thread):
     def handle_event(self, event):
         #fake uploader for now by 'uploading' to local directory by hash
         src = path.join("/home/aclindsa/asink_scratch", event.hash)
-        dst = path.join(Config().syncdir, event.path)
+        dst = path.join(Config().get("core", "syncdir"), event.path)
 
         #TODO downloaded files should probably be cached locally
         #TODO make sure deleted files are cached locally if they're not yet

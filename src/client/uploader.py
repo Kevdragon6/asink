@@ -34,7 +34,7 @@ class Uploader(threading.Thread):
 
     def handle_event(self, event):
         #fake uploader for now by 'uploading' to local directory by hash
-        src = path.join(Config().syncdir, event.path)
+        src = path.join(Config().get("core", "syncdir"), event.path)
         dst = path.join("/home/aclindsa/asink_scratch", event.hash)
         try:
             system('scp "%s" "%s:%s"' % (src, "localhost", dst))

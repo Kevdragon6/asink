@@ -33,7 +33,8 @@ class Receiver(threading.Thread):
         self.database = Database()
         while not self.stopped:
             try:
-                host = "http://%s:%s" % (Config().server, str(Config().port))
+                host = "http://%s:%s" % (Config().get("server", "host"),
+                                        Config().get("server", "port"))
                 response = urllib2.urlopen(host+"/api/updates/"+str(self.get_last_rev()), None, POLLING_TIMEOUT)
                 events = json.loads(response.read())
                 if len(events) > 0:

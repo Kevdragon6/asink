@@ -39,7 +39,7 @@ class Hasher(threading.Thread):
 
     def handle_event(self, event):
         try:
-            filepath = path.join(Config().syncdir, event.path)
+            filepath = path.join(Config().get("core", "syncdir"), event.path)
             event.hash = hash(filepath)
 
             #make sure the most recent version of this file doesn't match this one

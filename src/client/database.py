@@ -25,7 +25,7 @@ def cursor_generator(cursor):
 
 class Database:
     def __init__(self):
-        self.conn = sqlite3.connect(Config().dbfile)
+        self.conn = sqlite3.connect(Config().get("core", "dbfile"))
         self.cursor = self.conn.cursor()
         self.ensure_installed()
     def execute(self, query, args):

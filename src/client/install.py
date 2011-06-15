@@ -29,8 +29,9 @@ def main():
     cachedir = os.path.join(constants.dotdir, "cache")
     if not os.path.isdir(cachedir):
         os.mkdir(cachedir)
-    if not os.path.isdir(Config().syncdir):
-        os.mkdir(Config().syncdir)
+    syncdir = Config().get("core", "syncdir")
+    if not os.path.isdir(syncdir):
+        os.mkdir(syncdir)
 
     #create the database object so it will automatically create its database
     database = Database()

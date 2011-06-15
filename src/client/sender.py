@@ -45,6 +45,7 @@ class Sender(threading.Thread):
         if finalize or len(self.to_send) >= MAX_TO_QUEUE:
             j = json.dumps(self.to_send)
             urlencoded = urllib.urlencode({"data": j})
-            host = "http://%s:%s" % (Config().server, str(Config().port))
+            host = "http://%s:%s" % (Config().get("server", "host"),
+                                    Config().get("server", "port"))
             urllib2.urlopen(host+"/api", urlencoded).read()
             self.to_send = []

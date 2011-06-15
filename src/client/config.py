@@ -19,47 +19,55 @@ import ConfigParser
 
 import constants
 
+defaults = {"core.syncdir" : os.path.join(constants.homedir, "Asink"),
+            "core.dbfile" : os.path.join(constants.dotdir, "events.db"),
+            "core.storagemethod" : "ssh",
+
+            #Asink server options
+            "server.host" : "localhost",
+            "server.port" : 8080,
+
+            #SSH-related options (only necessary if core.storagemethod is ssh)
+            "ssh.host" : "localhost",
+            "ssh.port" : 22,
+            "ssh.username" : "asinkuser",
+            "ssh.basepath" : "/opt/asink"
+           }
+
 class _Config:
     #name of config file backing this object
     config_filename = constants.configfile
 
-    #options that will be read
-    syncdir = os.path.join(constants.homedir, "Asink")
-    dbfile = os.path.join(constants.dotdir, "fileinfo.db")
-    server = "localhost"
-    port = 8080
-
     def __init__(self):
         self.parser = ConfigParser.SafeConfigParser()
         read = self.parser.read(self.config_filename)
-        if self.config_filename in read:
-            self.parse()
-        #assume defaults if file doesn't exist
 
-    def parse(self):
-        try:
-            self.syncdir = self.parser.get('core', 'syncdir')
-            self.dbfile = self.parser.get('core', 'dbfile')
-            self.server = self.parser.get('core', 'server')
-            self.port = self.parser.getint('core', 'port')
-        except:
-            logging.warning("Config file at "+self.config_filename+" improperly formatted. Using default config options.")
-
-    def write(self, second_try = False):
-        try:
-            self.parser.set('core', 'syncdir', self.syncdir)
-            self.parser.set('core', 'dbfile', self.dbfile)
-            self.parser.set('core', 'server', self.server)
-            self.parser.set('core', 'port', str(self.port))
-        except:
-            if not second_try:
-                try:
-                    self.parser.add_section('core')
-                except ConfigParser.DuplicateSectionError:
-                    pass
-                self.write(True)
+    def write(self):
         with open(self.config_filename, 'wb') as configfile:
                 self.parser.write(configfile)
+
+    def get(self, section, option):
+        try:
+            return self.parser.get(section, option)
+        except:
+            wholeoption = section+"."+option
+            if wholeoption in defaults:
+                self.set(section, option, defaults[wholeoption]) #if it gets
+                    #read, it must be important, so we should write it out to the
+                    #config file for the user to change if they want
+                return defaults[wholeoption]
+            else:
+                return None
+
+    def set(self, section, option, value):
+        try:
+            self.parser.set(section, option, str(value))
+        except:
+            try:
+                self.parser.add_section(section)
+                self.parser.set(section, option, str(value))
+            except ConfigParser.DuplicateSectionError:
+                print "config.py: ConfigParser.DuplicateSectionError occurred. It shouldn't have."
 
 #make Config class a singleton so we don't have a million instances of it
 _config_singleton = _Config()
