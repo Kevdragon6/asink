@@ -27,6 +27,7 @@ POLLING_TIMEOUT = 10 #number of seconds to wait for a response
 
 class Receiver(threading.Thread):
     stopped = False
+    last_rev_seen = 0
     def stop(self):
         self.stopped = True
     def run(self):
@@ -44,7 +45,12 @@ class Receiver(threading.Thread):
             except BadStatusLine:
                 pass
     def get_last_rev(self):
-        return 0 #TODO implement me
+        if self.last_rev_seen == 0:
+            res = self.database.execute("SELECT rev FROM events SORT BY rev DESC LIMIT 1", ())
+            rev = next(res, None)
+            if rev is not None:
+                self.last_rev_seen = int(rev[0])
+        return self.last_rev_seen
     def handle_events(self, es):
         for e in es:
             event = events.Event(0)
@@ -56,13 +62,14 @@ class Receiver(threading.Thread):
             if oldEvent is not None:
                 ev2 = events.Event(0)
                 ev2.fromseq(oldEvent)
-                print event
-                print ev2
                 if ev2 != event:
                     #TODO handle error where event exists but isn't
                     #consistent
                     print "Error: events have same revision, but don't match"
                 return
+
+            if event.rev > self.last_rev_seen:
+                self.last_rev_seen = event.rev
 
             #if we've reached here, the event doesn't exist exactly in the local
             #database. Check if it exists, just w/ a rev of 0, or whether it is

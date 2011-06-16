@@ -75,10 +75,18 @@ class PollingHandler(tornado.web.RequestHandler, UpdatesMixin):
     def get(self, lastrev):
         #TODO - actually get their userid here
         userid = 0
-        #TODO check and see if there are already updates waiting on this user.
-            #If there are, return them and don't mess with keeping this connection
-            #around.
-        self.wait_for_updates(userid, self.async_callback(self.on_new_events))
+        #check and see if there are already updates waiting on this user. If
+        #there are, return them and don't mess with keeping this connection
+        #around.
+        res = local.database.execute("""SELECT * FROM events WHERE user=? AND
+                                     rev > ? SORT BY rev ASC""", (userid, lastrev))
+        events = []
+        for e in res:
+            events.append(e)
+        if len(events) > 0:
+            self.on_new_events(events)
+        else:
+            self.wait_for_updates(userid, self.async_callback(self.on_new_events))
 
     def on_new_events(self, events):
         if self.request.connection.stream.closed():
