@@ -40,7 +40,7 @@ class Sender(threading.Thread):
 
     def handle_event(self, event, finalize=False):
         if event:
-            print "sending", event
+            print "SEND     "+str(event)
             self.to_send.append(event.tolist())
         if finalize or len(self.to_send) >= MAX_TO_QUEUE:
             j = json.dumps(self.to_send)

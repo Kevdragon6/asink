@@ -55,6 +55,7 @@ class Receiver(threading.Thread):
         for e in es:
             event = events.Event(0)
             event.fromseq(e)
+            print "    RECV "+str(event)
             #make sure we don't already have this event
             res = self.database.execute("SELECT * FROM events WHERE rev=?",
                                   (event.rev,))
