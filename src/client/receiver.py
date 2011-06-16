@@ -71,7 +71,7 @@ class Receiver(threading.Thread):
             res = self.database.execute("""SELECT * FROM events WHERE rev=0 AND
                                         user=? AND type=? AND hash=? AND
                                         localpath=? AND modified=? AND
-                                        storagepath=? AND permissions=?""",
+                                        storagekey=? AND permissions=?""",
                                         event.totuple()[1:])
             localEvent = next(res, None)
             #if this originated as a local event, update the rev, and re-store it
@@ -79,7 +79,7 @@ class Receiver(threading.Thread):
                 self.database.execute("""UPDATE events SET rev=? WHERE rev=0 AND
                                         user=? AND type=? AND hash=? AND
                                         localpath=? AND modified=? AND
-                                        storagepath=? AND permissions=?""",
+                                        storagekey=? AND permissions=?""",
                                         event.totuple())
             #otherwise, pass it on to the downloader 
             else:

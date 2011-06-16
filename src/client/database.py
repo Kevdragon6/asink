@@ -53,7 +53,7 @@ class Database:
                 hash TEXT,
                 localpath TEXT,
                 modified INTEGER,
-                storagepath TEXT,
+                storagekey TEXT,
                 permissions INTEGER)""")
             #make index on rev and localpath
             self.cursor.execute("CREATE INDEX IF NOT EXISTS revidx on events (rev)")

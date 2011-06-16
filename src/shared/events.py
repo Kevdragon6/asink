@@ -30,7 +30,7 @@ class Event:
     hash = ""   #hex of sha hash
     time = 0    #unix timestamp
     path = ""   #local path to file
-    storagepath = "" #path or other info related to storage
+    storagekey = "" #path or other info related to storage
     permissions = "" #permissions of file as of this change
 
     def __init__(self, event_type):
@@ -58,15 +58,15 @@ class Event:
     def __eq__(self, other):
         return (self.type == other.type and self.userid == other.userid and
                 self.rev == other.rev and self.hash == other.hash and self.time
-                == other.time and self.path == other.path and self.storagepath
-                == other.storagepath and self.permissions == other.permissions)
+                == other.time and self.path == other.path and self.storagekey
+                == other.storagekey and self.permissions == other.permissions)
 
     def tolist(self):
         return [self.rev, self.userid, self.type, self.hash, self.path,
-                self.time, self.storagepath, self.permissions]
+                self.time, self.storagekey, self.permissions]
     def totuple(self):
         return (self.rev, self.userid, self.type, self.hash, self.path,
-                self.time, self.storagepath, self.permissions)
+                self.time, self.storagekey, self.permissions)
     def fromseq(self, l):
         self.rev = long(l[0])
         self.userid = int(l[1])
@@ -74,5 +74,5 @@ class Event:
         self.hash = str(l[3])
         self.path = str(l[4])
         self.time = float(l[5])
-        self.storagepath = str(l[6])
+        self.storagekey = str(l[6])
         self.permissions = str(l[7])
