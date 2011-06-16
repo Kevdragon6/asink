@@ -16,7 +16,7 @@
 import threading
 import Queue
 from shutil import copyfile, copymode, copystat
-from os import path, remove, system
+from os import path, remove
 
 from shared import events
 from config import Config
@@ -33,8 +33,6 @@ class Downloader(threading.Thread):
                 self.handle_event(event)
 
     def handle_event(self, event):
-        #fake uploader for now by 'uploading' to local directory by hash
-        src = path.join("/home/aclindsa/asink_scratch", event.hash)
         dst = path.join(Config().get("core", "syncdir"), event.path)
 
         #TODO downloaded files should probably be cached locally
@@ -49,10 +47,8 @@ class Downloader(threading.Thread):
             return
 
         try:
-            system('scp "%s:%s" "%s"' % ("localhost", src, dst))
-#            copyfile(src, dst)
-#            copymode(src, dst)
-#            copystat(src, dst)
+            self.storage.get(dst, event.hash, event.key)
+            #TODO handle failure of storage.get (will throw exception if fails)
             self.wus_queue.put(event)
         except:
             print "Error downloading file:"

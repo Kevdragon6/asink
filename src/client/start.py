@@ -26,11 +26,13 @@ sys.path.append(os.path.join(os.getcwd(), "../"))
 
 import constants
 from config import Config
+
+from storage.ssh import SSHStorage
+
 import watcher
 from hasher import Hasher
 from uploader import Uploader
 from sender import Sender
-
 from receiver import Receiver
 from downloader import Downloader
 
@@ -71,6 +73,11 @@ def main():
     receiver.rd_queue = rd_queue
     downloader.rd_queue = rd_queue
 
+    #setup storage provider
+    storage = setup_storage()
+    uploader.storage = storage.clone()
+    downloader.storage = storage
+
     #start all threads
     watcher.start_watching(wh_queue, wuhs_queue)
     hasher.start()
@@ -82,6 +89,16 @@ def main():
     #sleep until signaled, which will call sig_handler
     while True:
         time.sleep(86400) #= 24 hours just for fun
+
+def setup_storage():
+    method = Config().get("core", "storagemethod")
+    if method == "ssh":
+        host = Config().get("ssh", "host")
+        port = Config().get("ssh", "port")
+        username = Config().get("ssh", "username")
+        basepath = Config().get("ssh", "basepath")
+        return SSHStorage(host, username, basepath, port)
+    #TODO handle error if method isn't valid or setup right
 
 def setup_signals():
     signal.signal(signal.SIGABRT, sig_handler)

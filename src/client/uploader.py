@@ -15,8 +15,7 @@
 
 import threading
 import Queue
-from shutil import copyfile, copymode, copystat
-from os import path, system
+from os import path
 
 from shared import events
 from config import Config
@@ -35,12 +34,9 @@ class Uploader(threading.Thread):
     def handle_event(self, event):
         #fake uploader for now by 'uploading' to local directory by hash
         src = path.join(Config().get("core", "syncdir"), event.path)
-        dst = path.join("/home/aclindsa/asink_scratch", event.hash)
         try:
-            system('scp "%s" "%s:%s"' % (src, "localhost", dst))
-#            copyfile(src, dst)
-#            copymode(src, dst)
-#            copystat(src, dst)
+            event.storagekey = self.storage.put(src, event.hash)
+            #TODO handle failure of storage.put (will throw exception if fails)
             self.wuhs_queue.put(event)
         except:
             print "Error uploading file:"
