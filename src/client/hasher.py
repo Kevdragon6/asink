@@ -50,10 +50,8 @@ class Hasher(threading.Thread):
             if latest is not None:
                 e = events.Event(0)
                 e.fromseq(latest)
-                print "latest is not None"
-                print e
                 if e.hash == event.hash:
-                    print "returning because hashes are equal"
+                    #returning because hashes are equal
                     return
 
             res = self.database.execute("SELECT * FROM events WHERE hash=?",
