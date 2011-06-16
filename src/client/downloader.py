@@ -16,7 +16,7 @@
 import threading
 import Queue
 from shutil import copyfile, copymode, copystat
-from os import path, remove
+from os import path, remove, makedirs
 
 from shared import events
 from config import Config
@@ -47,9 +47,12 @@ class Downloader(threading.Thread):
             return
 
         try:
-            self.storage.get(dst, event.hash, event.key)
+            #make sure directory exists first
+            dirname = path.dirname(dst)
+            if not path.isdir(dirname):
+                makedirs(dirname)
+            self.storage.get(dst, event.hash, event.storagekey)
             #TODO handle failure of storage.get (will throw exception if fails)
-            self.wus_queue.put(event)
         except:
             print "Error downloading file:"
             print event

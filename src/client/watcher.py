@@ -24,16 +24,18 @@ from shared.events import Event, EventType
 mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE | pyinotify.IN_MODIFY | pyinotify.IN_MOVED_TO | pyinotify.IN_MOVED_FROM # watched events
 
 class EventHandler(pyinotify.ProcessEvent):
-    def enqueue_modify(self, path):
-        e = Event(EventType.UPDATE | EventType.LOCAL)
-        e.path = get_rel_path(path)
-        e.time = time()
-        self.wh_queue.put(e, True)
-    def enqueue_delete(self, path):
-        e = Event(EventType.DELETE | EventType.LOCAL)
-        e.path = get_rel_path(path)
-        e.time = time()
-        self.wuhs_queue.put(e, True)
+    def enqueue_modify(self, filepath):
+        if not path.isdir(filepath):
+            e = Event(EventType.UPDATE | EventType.LOCAL)
+            e.path = get_rel_path(filepath)
+            e.time = time()
+            self.wh_queue.put(e, True)
+    def enqueue_delete(self, filepath):
+        if not path.isdir(filepath):
+            e = Event(EventType.DELETE | EventType.LOCAL)
+            e.path = get_rel_path(filepath)
+            e.time = time()
+            self.wuhs_queue.put(e, True)
     def process_IN_CREATE(self, event):
         self.enqueue_modify(event.pathname)
     def process_IN_MODIFY(self, event):
