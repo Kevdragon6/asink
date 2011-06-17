@@ -79,7 +79,7 @@ class PollingHandler(tornado.web.RequestHandler, UpdatesMixin):
         #there are, return them and don't mess with keeping this connection
         #around.
         res = local.database.execute("""SELECT * FROM events WHERE user=? AND
-                                     rev > ? SORT BY rev ASC""", (userid, lastrev))
+                                     rev > ? ORDER BY rev ASC""", (userid, lastrev))
         events = []
         for e in res:
             events.append(e)
