@@ -32,8 +32,7 @@ class Uploader(threading.Thread):
                 self.handle_event(event)
 
     def handle_event(self, event):
-        #fake uploader for now by 'uploading' to local directory by hash
-        src = path.join(Config().get("core", "syncdir"), event.path)
+        src = path.join(Config().get("core", "cachedir"), event.hash)
         try:
             event.storagekey = self.storage.put(src, event.hash)
             #TODO handle failure of storage.put (will throw exception if fails)

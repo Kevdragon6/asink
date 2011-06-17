@@ -16,7 +16,9 @@
 import threading
 import Queue
 import hashlib
-from os import path
+from os import path, close
+from tempfile import mkstemp
+from shutil import copy2, move
 
 from database import Database
 from shared import events
@@ -40,7 +42,20 @@ class Hasher(threading.Thread):
     def handle_event(self, event):
         try:
             filepath = path.join(Config().get("core", "syncdir"), event.path)
-            event.hash = hash(filepath)
+
+            #first, copy the file over to a temporary directory, get its hash,
+            #and then move it to the filename with that hash value
+            handle, tmppath = mkstemp(dir=Config().get("core", "cachedir"))
+            close(handle) #we don't really want it open, we just want a good name
+            copy2(filepath, tmppath)
+
+            event.hash = hash(tmppath)
+            print "HASHED", event
+
+            cachepath = path.join(Config().get("core", "cachedir"), event.hash)
+
+            #move tmp file to hash-named file in cache directory
+            move(tmppath, cachepath)
 
             #make sure the most recent version of this file doesn't match this one
             #this protects against basically creating an infinite loop
@@ -63,11 +78,14 @@ class Hasher(threading.Thread):
                                   event.totuple()[1:])
 
             if needsUpload:
+                print "HASH_HU ", event
                 self.hu_queue.put(event)
             else:
+                print "HASH_WUHS ", event
                 self.wuhs_queue.put(event) #TODO check to make sure files
                                            #match, not just hashes
         except Exception as e:
+            print e.message
             print "Error hashing file:"
             print event
 

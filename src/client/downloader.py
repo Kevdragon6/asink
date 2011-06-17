@@ -15,8 +15,9 @@
 
 import threading
 import Queue
-from shutil import copyfile, copymode, copystat
-from os import path, remove, makedirs
+from tempfile import mkstemp
+from shutil import copy2, move
+from os import path, remove, makedirs, close
 
 from shared import events
 from config import Config
@@ -34,6 +35,7 @@ class Downloader(threading.Thread):
 
     def handle_event(self, event):
         dst = path.join(Config().get("core", "syncdir"), event.path)
+        cachepath = path.join(Config().get("core", "cachedir"), event.hash)
 
         #TODO downloaded files should probably be cached locally
         #TODO make sure deleted files are cached locally if they're not yet
@@ -46,13 +48,31 @@ class Downloader(threading.Thread):
                     print "error removing ", event.path
             return
 
-        try:
-            #make sure directory exists first
-            dirname = path.dirname(dst)
-            if not path.isdir(dirname):
-                makedirs(dirname)
-            self.storage.get(dst, event.hash, event.storagekey)
-            #TODO handle failure of storage.get (will throw exception if fails)
-        except:
-            print "Error downloading file:"
-            print event
+        #ensure file isn't already cached
+        if not path.exists(cachepath):
+            try:
+                #create temporary file to download it to
+                handle, tmppath = mkstemp(dir=Config().get("core", "cachedir"))
+                close(handle) #we don't really want it open, we just want a good name
+
+                self.storage.get(tmppath, event.hash, event.storagekey)
+                #TODO handle failure of storage.get (will throw exception if fails)
+
+                #move temp file to hashed cache file
+                move(tmppath, cachepath)
+            except:
+                print "Error downloading file:"
+                print event
+
+        #move file from cache directory to actual file system
+        #by way of another tmp file
+        handle, tmppath = mkstemp(dir=Config().get("core", "cachedir"))
+        close(handle) #we don't really want it open, we just want a good name
+        copy2(cachepath, tmppath)
+
+        #make sure directory exists first
+        dirname = path.dirname(dst)
+        if not path.isdir(dirname):
+            makedirs(dirname)
+
+        move(tmppath, dst)

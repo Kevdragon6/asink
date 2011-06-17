@@ -26,7 +26,7 @@ def main():
     #make sure directories exist
     if not os.path.isdir(constants.dotdir):
         os.mkdir(constants.dotdir)
-    cachedir = os.path.join(constants.dotdir, "cache")
+    cachedir = Config().get("core", "cachedir")
     if not os.path.isdir(cachedir):
         os.mkdir(cachedir)
     syncdir = Config().get("core", "syncdir")
