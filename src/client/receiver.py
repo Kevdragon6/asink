@@ -55,6 +55,10 @@ class Receiver(threading.Thread):
         for e in es:
             event = events.Event(0)
             event.fromseq(e)
+
+            if event.rev > self.last_rev_seen:
+                self.last_rev_seen = event.rev
+
             print "    RECV "+str(event)
             #make sure we don't already have this event
             res = self.database.execute("SELECT * FROM events WHERE rev=?",
@@ -68,9 +72,6 @@ class Receiver(threading.Thread):
                     #consistent
                     print "Error: events have same revision, but don't match"
                 return
-
-            if event.rev > self.last_rev_seen:
-                self.last_rev_seen = event.rev
 
             #if we've reached here, the event doesn't exist exactly in the local
             #database. Check if it exists, just w/ a rev of 0, or whether it is
