@@ -60,6 +60,8 @@ class Event:
                 self.rev == other.rev and self.hash == other.hash and self.time
                 == other.time and self.path == other.path and self.storagekey
                 == other.storagekey and self.permissions == other.permissions)
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def tolist(self):
         return [self.rev, self.userid, self.type, self.hash, self.path,
