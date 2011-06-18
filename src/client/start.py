@@ -59,22 +59,22 @@ def main():
     downloader = Downloader()
 
     #create and set up queues which are used to pass events between threads
-    wh_queue = Queue()
-    indexer.wh_queue = wh_queue
-    hasher.wh_queue = wh_queue
+    hasher_queue = Queue()
+    indexer.hasher_queue = hasher_queue
+    hasher.queue = hasher_queue
     #set on watcher when initialized
 
-    hu_queue = Queue()
-    hasher.hu_queue = hu_queue
-    uploader.hu_queue = hu_queue
+    uploader_queue = Queue()
+    hasher.uploader_queue = uploader_queue
+    uploader.queue = uploader_queue
 
-    wuhs_queue = Queue()
-    uploader.wuhs_queue = wuhs_queue
-    sender.wuhs_queue = wuhs_queue
+    sender_queue = Queue()
+    uploader.sender_queue = sender_queue
+    sender.queue = sender_queue
 
-    rd_queue = Queue()
-    receiver.rd_queue = rd_queue
-    downloader.rd_queue = rd_queue
+    downloader_queue = Queue()
+    receiver.downloader_queue = downloader_queue
+    downloader.queue = downloader_queue
 
     #setup storage provider
     storage = setup_storage()
@@ -82,7 +82,7 @@ def main():
     downloader.storage = storage
 
     #start all threads
-    watcher.start_watching(wh_queue, wuhs_queue)
+    watcher.start_watching(hasher_queue)
     indexer.start()
     hasher.start()
     uploader.start()

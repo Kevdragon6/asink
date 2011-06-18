@@ -35,7 +35,7 @@ class Sender(threading.Thread):
     def run(self):
         while not self.stopped:
            try:
-                self.handle_event(self.wuhs_queue.get(True, 0.2))
+                self.handle_event(self.queue.get(True, 0.2))
            except Queue.Empty:
                if len(self.to_send) > 0:
                    self.handle_event(None, True)

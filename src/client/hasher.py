@@ -32,11 +32,11 @@ class Hasher(threading.Thread):
     stopped = False
     def stop(self):
         self.stopped = True
-        self.wh_queue.put(None)
+        self.queue.put(None)
     def run(self):
         self.database = Database()
         while not self.stopped:
-            event = self.wh_queue.get(True)
+            event = self.queue.get(True)
             if event:
                 self.handle_event(event)
 
@@ -71,7 +71,7 @@ class Hasher(threading.Thread):
                     return
 
             #pass it along to the uploader now
-            self.hu_queue.put(event)
+            self.uploader_queue.put(event)
 
         except Exception as e:
             logging.error("Error in hasher: "+str(event)+"\n"+e.message)

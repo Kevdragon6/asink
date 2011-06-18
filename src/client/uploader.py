@@ -26,11 +26,11 @@ class Uploader(threading.Thread):
     stopped = False
     def stop(self):
         self.stopped = True
-        self.hu_queue.put(None)
+        self.queue.put(None)
     def run(self):
         self.database = Database()
         while not self.stopped:
-            event = self.hu_queue.get(True)
+            event = self.queue.get(True)
             if event:
                 self.handle_event(event)
 
@@ -51,8 +51,8 @@ class Uploader(threading.Thread):
             try:
                 event.storagekey = self.storage.put(src, event.hash)
                 #TODO handle failure of storage.put (will throw exception if fails)
-                self.wuhs_queue.put(event)
+                self.sender_queue.put(event)
             except Exception as e:
                 logging.error("Error uploading file: "+str(event)+"\n"+e.message)
         else:
-            self.wuhs_queue.put(event)
+            self.sender_queue.put(event)

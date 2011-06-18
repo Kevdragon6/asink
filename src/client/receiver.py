@@ -95,4 +95,4 @@ class Receiver(threading.Thread):
             else:
                 self.database.execute("""INSERT INTO events VALUES
                                       (?,?,?,?,?,?,?,?)""", event.totuple())
-                self.rd_queue.put(event)
+                self.downloader_queue.put(event)

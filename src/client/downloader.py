@@ -26,10 +26,10 @@ class Downloader(threading.Thread):
     stopped = False
     def stop(self):
         self.stopped = True
-        self.rd_queue.put(None)
+        self.queue.put(None)
     def run(self):
         while not self.stopped:
-            event = self.rd_queue.get(True)
+            event = self.queue.get(True)
             if event:
                 self.handle_event(event)
 
