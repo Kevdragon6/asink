@@ -18,9 +18,9 @@ import Queue
 import urllib
 import urllib2
 import json
+import time
 import logging
 
-from shared import events
 from config import Config
 
 MAX_TO_QUEUE = 100  #The maximum number of events to queue before sending them to
@@ -28,6 +28,7 @@ MAX_TO_QUEUE = 100  #The maximum number of events to queue before sending them t
 
 class Sender(threading.Thread):
     stopped = False
+    failed_attempts = 0
     to_send = [] #list of events to send to the server
     def stop(self):
         self.stopped = True
@@ -48,5 +49,12 @@ class Sender(threading.Thread):
             urlencoded = urllib.urlencode({"data": j})
             host = "http://%s:%s" % (Config().get("server", "host"),
                                     Config().get("server", "port"))
-            urllib2.urlopen(host+"/api", urlencoded).read()
-            self.to_send = []
+            try:
+                urllib2.urlopen(host+"/api", urlencoded).read()
+                self.to_send = []
+                self.failed_attempts = 0
+            except urllib2.URLError:
+                self.failed_attempts += 1
+                logging.warning("Failed to connect to the server %d time(s)." %
+                                (self.failed_attempts))
+                time.sleep(0.2)
