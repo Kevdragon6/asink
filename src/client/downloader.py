@@ -15,9 +15,10 @@
 
 import threading
 import Queue
+import logging
 from tempfile import mkstemp
 from shutil import copy2, move
-from os import path, remove, makedirs, close
+from os import path, remove, makedirs, close, rmdir
 
 from shared import events
 from config import Config
@@ -41,11 +42,10 @@ class Downloader(threading.Thread):
         #TODO make sure deleted files are cached locally if they're not yet
             #stored online
         if event.type & events.EventType.DELETE != 0:
-            if path.exists(dst):
-                try:
-                    remove(dst)
-                except: #OSError from file not existing
-                    print "error removing ", event.path
+            try:
+                self.recursive_delete(dst)
+            except: #OSError from file not existing
+                logging.error("could not remove "+event.path)
             return
 
         #ensure file isn't already cached
@@ -76,3 +76,15 @@ class Downloader(threading.Thread):
             makedirs(dirname)
 
         move(tmppath, dst)
+
+    def recursive_delete(self, filepath):
+        syncdir = Config().get("core", "syncdir")
+        remove(filepath)
+        logging.debug( "removed "+ filepath)
+        try:
+            dirpath = path.dirname(filepath)
+            while dirpath != syncdir and len(dirpath) > len(syncdir):
+                rmdir(dirpath)
+                dirpath = path.dirname(dirpath)
+        except OSError:
+            pass

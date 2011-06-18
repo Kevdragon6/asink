@@ -57,6 +57,13 @@ class Hasher(threading.Thread):
                 #move tmp file to hash-named file in cache directory
                 cachepath = path.join(Config().get("core", "cachedir"), event.hash)
                 move(tmppath, cachepath)
+            else:
+                #if the file doesn't exist and we're a delete event, just drop it
+                res = self.database.execute("""SELECT * FROM events WHERE localpath=? 
+                                            LIMIT 1""", (event.path,))
+                exists = next(res, None)
+                if exists is None:
+                    return
 
             #make sure the most recent version of this file doesn't match this one
             #this protects against basically creating an infinite loop
