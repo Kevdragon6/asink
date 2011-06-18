@@ -47,7 +47,7 @@ class Receiver(threading.Thread):
                 pass
     def get_last_rev(self):
         if self.last_rev_seen == 0:
-            res = self.database.execute("SELECT rev FROM events SORT BY rev DESC LIMIT 1", ())
+            res = self.database.execute("SELECT rev FROM events ORDER BY rev DESC LIMIT 1", ())
             rev = next(res, None)
             if rev is not None:
                 self.last_rev_seen = int(rev[0])
