@@ -18,6 +18,7 @@ import Queue
 import urllib
 import urllib2
 import json
+import logging
 
 from shared import events
 from config import Config
@@ -40,7 +41,7 @@ class Sender(threading.Thread):
 
     def handle_event(self, event, finalize=False):
         if event:
-            print "SEND     "+str(event)
+            logging.info("SEND     "+str(event))
             self.to_send.append(event.tolist())
         if finalize or len(self.to_send) >= MAX_TO_QUEUE:
             j = json.dumps(self.to_send)

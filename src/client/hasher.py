@@ -16,6 +16,7 @@
 import threading
 import Queue
 import hashlib
+import logging
 from os import path, close
 from tempfile import mkstemp
 from shutil import copy2, move
@@ -50,7 +51,7 @@ class Hasher(threading.Thread):
             copy2(filepath, tmppath)
 
             event.hash = hash(tmppath)
-            print "HASHED", event
+            logging.debug("HASHED  "+str(event))
 
             cachepath = path.join(Config().get("core", "cachedir"), event.hash)
 
@@ -78,16 +79,12 @@ class Hasher(threading.Thread):
                                   event.totuple()[1:])
 
             if needsUpload:
-                print "HASH_HU ", event
                 self.hu_queue.put(event)
             else:
-                print "HASH_WUHS ", event
                 self.wuhs_queue.put(event) #TODO check to make sure files
                                            #match, not just hashes
         except Exception as e:
-            print e.message
-            print "Error hashing file:"
-            print event
+            logging.error("Error hashing file: "+str(event)+"\n"+e.message)
 
 def hash(filename):
     fn = hashfn()

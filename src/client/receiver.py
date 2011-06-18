@@ -17,6 +17,7 @@ import threading
 import Queue
 import urllib2
 import json
+import logging
 from httplib import BadStatusLine
 
 from shared import events
@@ -59,7 +60,7 @@ class Receiver(threading.Thread):
             if event.rev > self.last_rev_seen:
                 self.last_rev_seen = event.rev
 
-            print "    RECV "+str(event)
+            logging.info("    RECV "+str(event))
             #make sure we don't already have this event
             res = self.database.execute("SELECT * FROM events WHERE rev=?",
                                   (event.rev,))
@@ -70,7 +71,7 @@ class Receiver(threading.Thread):
                 if ev2 != event:
                     #TODO handle error where event exists but isn't
                     #consistent
-                    print "Error: events have same revision, but don't match"
+                    logging.error("receiver error: events have same revision, but don't match:"+str(event)+" and "+str(ev2))
                 return
 
             #if we've reached here, the event doesn't exist exactly in the local

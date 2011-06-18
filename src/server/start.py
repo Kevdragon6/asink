@@ -17,6 +17,7 @@
 
 import sys
 import os
+import logging
 import tornado.ioloop
 import tornado.web
 
@@ -32,7 +33,12 @@ application = tornado.web.Application([
     (r"/api/updates/([0-9]+)", PollingHandler),
 ])
 
+def setup_logging():
+    #TODO set this to go to a configurable file, and make logging level configurable
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
+
 if __name__ == "__main__":
+    setup_logging()
     application.listen(8080)
     try:
         tornado.ioloop.IOLoop.instance().start()

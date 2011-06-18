@@ -16,6 +16,7 @@
 import json
 import tornado.web
 import threading
+import logging
 
 from shared import events
 from database import Database
@@ -78,14 +79,19 @@ class PollingHandler(tornado.web.RequestHandler, UpdatesMixin):
         #check and see if there are already updates waiting on this user. If
         #there are, return them and don't mess with keeping this connection
         #around.
+        logging.info("Update request w/ ip=%s, userid=%s, lastrev=%s" %
+                     (self.request.remote_ip, userid, lastrev))
         res = local.database.execute("""SELECT * FROM events WHERE user=? AND
                                      rev > ? ORDER BY rev ASC""", (userid, lastrev))
         events = []
         for e in res:
             events.append(e)
         if len(events) > 0:
+            logging.debug("%s events already available, returning those" %
+                          len(events))
             self.on_new_events(events)
         else:
+            logging.debug("No events available, blocking")
             self.wait_for_updates(userid, self.async_callback(self.on_new_events))
 
     def on_new_events(self, events):

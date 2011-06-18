@@ -16,6 +16,7 @@
 import threading
 import Queue
 from os import path
+import logging
 
 from shared import events
 from config import Config
@@ -37,6 +38,5 @@ class Uploader(threading.Thread):
             event.storagekey = self.storage.put(src, event.hash)
             #TODO handle failure of storage.put (will throw exception if fails)
             self.wuhs_queue.put(event)
-        except:
-            print "Error uploading file:"
-            print event
+        except Exception as e:
+            logging.error("Error uploading file: "+str(event)+"\n"+e.message)

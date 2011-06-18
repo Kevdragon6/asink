@@ -19,6 +19,7 @@ import os
 import signal
 import sys
 import time
+import logging
 from Queue import Queue
 
 #fixup python include path, so we can include other project directories
@@ -38,6 +39,7 @@ from downloader import Downloader
 
 def main():
     global hasher, uploader, sender, receiver, downloader
+    setup_logging()
     setup_signals()
 
     #TODO implement this
@@ -89,6 +91,11 @@ def main():
     #sleep until signaled, which will call sig_handler
     while True:
         time.sleep(86400) #= 24 hours just for fun
+
+def setup_logging():
+    #TODO log to a file
+    #TODO make log level a config option
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
 def setup_storage():
     method = Config().get("core", "storagemethod")
