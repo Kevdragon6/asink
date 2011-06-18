@@ -31,6 +31,7 @@ from config import Config
 from storage.ssh import SSHStorage
 
 import watcher
+from indexer import Indexer
 from hasher import Hasher
 from uploader import Uploader
 from sender import Sender
@@ -38,7 +39,7 @@ from receiver import Receiver
 from downloader import Downloader
 
 def main():
-    global hasher, uploader, sender, receiver, downloader
+    global indexer, hasher, uploader, sender, receiver, downloader
     setup_logging()
     setup_signals()
 
@@ -50,6 +51,7 @@ def main():
     #begin handling incoming inotify events, and longpolling info from server
 
     #create all threads which will be used to process events
+    indexer = Indexer()
     hasher = Hasher()
     uploader = Uploader()
     sender = Sender()
@@ -58,6 +60,7 @@ def main():
 
     #create and set up queues which are used to pass events between threads
     wh_queue = Queue()
+    indexer.wh_queue = wh_queue
     hasher.wh_queue = wh_queue
     #set on watcher when initialized
 
@@ -82,6 +85,7 @@ def main():
 
     #start all threads
     watcher.start_watching(wh_queue, wuhs_queue)
+    indexer.start()
     hasher.start()
     uploader.start()
     sender.start()
@@ -113,10 +117,11 @@ def setup_signals():
     signal.signal(signal.SIGINT, sig_handler)
 
 def sig_handler(signum, frame):
-    global hasher, uploader, sender, receiver
+    global indexer, hasher, uploader, sender, receiver
     receiver.stop() #stop the receiver first, because it could take a while to
         #finish its last poll
     watcher.stop_watching()
+    indexer.stop()
     hasher.stop()
     uploader.stop()
     sender.stop()
