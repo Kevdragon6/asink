@@ -69,9 +69,7 @@ def main():
     uploader.hu_queue = hu_queue
 
     wuhs_queue = Queue()
-    watcher.wuhs_queue = wuhs_queue
     uploader.wuhs_queue = wuhs_queue
-    hasher.wuhs_queue = wuhs_queue
     sender.wuhs_queue = wuhs_queue
 
     rd_queue = Queue()

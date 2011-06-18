@@ -18,8 +18,9 @@ import Queue
 from os import path
 import logging
 
-from shared import events
+from shared.events import EventType
 from config import Config
+from database import Database
 
 class Uploader(threading.Thread):
     stopped = False
@@ -27,6 +28,7 @@ class Uploader(threading.Thread):
         self.stopped = True
         self.hu_queue.put(None)
     def run(self):
+        self.database = Database()
         while not self.stopped:
             event = self.hu_queue.get(True)
             if event:
@@ -34,9 +36,23 @@ class Uploader(threading.Thread):
 
     def handle_event(self, event):
         src = path.join(Config().get("core", "cachedir"), event.hash)
-        try:
-            event.storagekey = self.storage.put(src, event.hash)
-            #TODO handle failure of storage.put (will throw exception if fails)
+
+        needsUpload = False
+        if event.type & EventType.DELETE is 0:
+            res = self.database.execute("SELECT * FROM events WHERE hash=? AND rev!=0",
+                                       (event.hash,))
+            needsUpload = next(res, None) is None
+
+        #add event to the database
+        self.database.execute("INSERT INTO events VALUES (0,?,?,?,?,?,?,?)",
+                              event.totuple()[1:])
+
+        if needsUpload:
+            try:
+                event.storagekey = self.storage.put(src, event.hash)
+                #TODO handle failure of storage.put (will throw exception if fails)
+                self.wuhs_queue.put(event)
+            except Exception as e:
+                logging.error("Error uploading file: "+str(event)+"\n"+e.message)
+        else:
             self.wuhs_queue.put(event)
-        except Exception as e:
-            logging.error("Error uploading file: "+str(event)+"\n"+e.message)

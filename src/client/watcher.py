@@ -35,7 +35,7 @@ class EventHandler(pyinotify.ProcessEvent):
             e = Event(EventType.DELETE | EventType.LOCAL)
             e.path = get_rel_path(filepath)
             e.time = time()
-            self.wuhs_queue.put(e, True)
+            self.wh_queue.put(e, True)
     def process_IN_CREATE(self, event):
         self.enqueue_modify(event.pathname)
     def process_IN_MODIFY(self, event):

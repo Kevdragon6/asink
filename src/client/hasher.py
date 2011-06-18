@@ -22,7 +22,7 @@ from tempfile import mkstemp
 from shutil import copy2, move
 
 from database import Database
-from shared import events
+from shared.events import Event, EventType
 from config import Config
 
 hashfn = hashlib.sha256
@@ -44,19 +44,19 @@ class Hasher(threading.Thread):
         try:
             filepath = path.join(Config().get("core", "syncdir"), event.path)
 
-            #first, copy the file over to a temporary directory, get its hash,
-            #and then move it to the filename with that hash value
-            handle, tmppath = mkstemp(dir=Config().get("core", "cachedir"))
-            close(handle) #we don't really want it open, we just want a good name
-            copy2(filepath, tmppath)
+            if event.type & EventType.DELETE is 0:
+                #first, copy the file over to a temporary directory, get its hash,
+                #and then move it to the filename with that hash value
+                handle, tmppath = mkstemp(dir=Config().get("core", "cachedir"))
+                close(handle) #we don't really want it open, we just want a good name
+                copy2(filepath, tmppath)
 
-            event.hash = hash(tmppath)
-            logging.debug("HASHED  "+str(event))
+                event.hash = hash(tmppath)
+                logging.debug("HASHED  "+str(event))
 
-            cachepath = path.join(Config().get("core", "cachedir"), event.hash)
-
-            #move tmp file to hash-named file in cache directory
-            move(tmppath, cachepath)
+                #move tmp file to hash-named file in cache directory
+                cachepath = path.join(Config().get("core", "cachedir"), event.hash)
+                move(tmppath, cachepath)
 
             #make sure the most recent version of this file doesn't match this one
             #this protects against basically creating an infinite loop
@@ -64,27 +64,17 @@ class Hasher(threading.Thread):
                                         AND rev != 0 ORDER BY rev DESC LIMIT 1""", (event.path,))
             latest = next(res, None)
             if latest is not None:
-                e = events.Event(0)
+                e = Event(0)
                 e.fromseq(latest)
                 if e.hash == event.hash:
                     #returning because hashes are equal
                     return
 
-            res = self.database.execute("SELECT * FROM events WHERE hash=?",
-                                       (event.hash,))
-            needsUpload = not next(res, None)
+            #pass it along to the uploader now
+            self.hu_queue.put(event)
 
-            #add event to the database
-            self.database.execute("INSERT INTO events VALUES (0,?,?,?,?,?,?,?)",
-                                  event.totuple()[1:])
-
-            if needsUpload:
-                self.hu_queue.put(event)
-            else:
-                self.wuhs_queue.put(event) #TODO check to make sure files
-                                           #match, not just hashes
         except Exception as e:
-            logging.error("Error hashing file: "+str(event)+"\n"+e.message)
+            logging.error("Error in hasher: "+str(event)+"\n"+e.message)
 
 def hash(filename):
     fn = hashfn()
