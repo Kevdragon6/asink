@@ -48,9 +48,9 @@ class Downloader(threading.Thread):
                 logging.error("could not remove "+event.path)
             return
 
-        #ensure file isn't already cached
-        if not path.exists(cachepath):
-            try:
+        try:
+            #ensure file isn't already cached
+            if not path.exists(cachepath):
                 #create temporary file to download it to
                 handle, tmppath = mkstemp(dir=Config().get("core", "cachedir"))
                 close(handle) #we don't really want it open, we just want a good name
@@ -60,22 +60,22 @@ class Downloader(threading.Thread):
 
                 #move temp file to hashed cache file
                 move(tmppath, cachepath)
-            except:
-                print "Error downloading file:"
-                print event
 
-        #move file from cache directory to actual file system
-        #by way of another tmp file
-        handle, tmppath = mkstemp(dir=Config().get("core", "cachedir"))
-        close(handle) #we don't really want it open, we just want a good name
-        copy2(cachepath, tmppath)
+            #move file from cache directory to actual file system
+            #by way of another tmp file
+            handle, tmppath = mkstemp(dir=Config().get("core", "cachedir"))
+            close(handle) #we don't really want it open, we just want a good name
+            copy2(cachepath, tmppath)
 
-        #make sure directory exists first
-        dirname = path.dirname(dst)
-        if not path.isdir(dirname):
-            makedirs(dirname)
+            #make sure directory exists first
+            dirname = path.dirname(dst)
+            if not path.isdir(dirname):
+                makedirs(dirname)
 
-        move(tmppath, dst)
+            move(tmppath, dst)
+        except Exception as e:
+            logging.error("Could not download file: "+str(event))
+            logging.error(str(type(e))+": "+e.message)
 
     def recursive_delete(self, filepath):
         syncdir = Config().get("core", "syncdir")
