@@ -14,6 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sqlite3
+import logging
 
 def cursor_generator(cursor):
     results = cursor.fetchmany()
@@ -33,6 +34,8 @@ class Database:
                 self.cursor.execute(query, args)
                 break
             except sqlite3.OperationalError:
+                logging.error("sqlite3.OperationalError while running
+                              query:\n"+query+" with args "+str(args))
                 self.rollback()
         self.commit()
         return cursor_generator(self.cursor)

@@ -14,6 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from config import Config
+import logging
 import sqlite3
 
 def cursor_generator(cursor):
@@ -34,6 +35,8 @@ class Database:
                 self.cursor.execute(query, args)
                 break
             except sqlite3.OperationalError:
+                logging.error("sqlite3.OperationalError while running
+                              query:\n"+query+" with args "+str(args))
                 self.rollback()
         self.commit()
         return cursor_generator(self.cursor)
