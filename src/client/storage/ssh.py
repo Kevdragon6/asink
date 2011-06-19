@@ -13,7 +13,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from os import path, system
+from os import path
+import subprocess
+import logging
 from copy import deepcopy
 
 class SSHStorage:
@@ -30,8 +32,13 @@ class SSHStorage:
            string key the calling application should pass to get() to retrieve
            the file."""
         dst = path.join(self.basepath, hash)
-        system('scp -P %s "%s" "%s@%s:%s" > /dev/null' % (self.port, localpath,
-                                              self.username, self.host, dst))
+        args = ['scp', '-P', str(self.port), localpath, "%s@%s:%s" %
+                            (self.username, self.host, dst)]
+        logging.debug(str(args))
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        if len(err) > 0:
+            logging.error(err)
         return ""   #return empty key, because the hash and path are enough for us to
                     #retrieve the file
 
@@ -39,8 +46,13 @@ class SSHStorage:
         """Gets the file which was stored earlier with this localpath, hash, and
            which returned this key from the put method."""
         src = path.join(self.basepath, hash)
-        system('scp -P %s "%s@%s:%s" "%s" > /dev/null' % (self.port, self.username,
-                                              self.host, src, localpath))
+        args = ['scp', '-P', str(self.port), "%s@%s:%s" % (self.username,
+                            self.host, src), localpath]
+        logging.debug(str(args))
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        if len(err) > 0:
+            logging.error(err)
 
     def clone(self):
         """Provide a clone of this storage object so others can use it"""
