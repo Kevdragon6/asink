@@ -80,7 +80,7 @@ class Downloader(threading.Thread):
     def recursive_delete(self, filepath):
         syncdir = Config().get("core", "syncdir")
         remove(filepath)
-        logging.debug( "removed "+ filepath)
+        logging.debug("removed "+ filepath)
         try:
             dirpath = path.dirname(filepath)
             while dirpath != syncdir and len(dirpath) > len(syncdir):

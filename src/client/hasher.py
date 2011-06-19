@@ -81,7 +81,8 @@ class Hasher(threading.Thread):
             self.uploader_queue.put(event)
 
         except Exception as e:
-            logging.error("Error in hasher: "+str(event)+"\n"+e.message)
+            logging.error("Hasher failed to hash: "+str(event)+"\n"+e.message)
+            logging.error(str(type(e))+": "+e.message)
 
 def hash(filename):
     fn = hashfn()
