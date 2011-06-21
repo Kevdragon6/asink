@@ -18,6 +18,7 @@ from Queue import Queue
 from time import time
 from os import path
 
+import util
 from config import Config
 from shared.events import Event, EventType
 
@@ -28,13 +29,13 @@ class EventHandler(pyinotify.ProcessEvent):
         if not path.isdir(filepath):
             e = Event(EventType.UPDATE | EventType.LOCAL)
             e.path = get_rel_path(filepath)
-            e.time = time()
+            e.time = time() + util.time_diff()
             self.hasher_queue.put(e, True)
     def enqueue_delete(self, filepath):
         if not path.isdir(filepath):
             e = Event(EventType.DELETE | EventType.LOCAL)
             e.path = get_rel_path(filepath)
-            e.time = time()
+            e.time = time() + util.time_diff()
             self.hasher_queue.put(e, True)
     def process_IN_CREATE(self, event):
         self.enqueue_modify(event.pathname)

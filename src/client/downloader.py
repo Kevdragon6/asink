@@ -22,6 +22,7 @@ from os import path, remove, makedirs, close, rmdir
 
 from shared import events
 from config import Config
+from database import Database
 
 class Downloader(threading.Thread):
     stopped = False
@@ -29,6 +30,7 @@ class Downloader(threading.Thread):
         self.stopped = True
         self.queue.put(None)
     def run(self):
+        self.database = Database()
         while not self.stopped:
             event = self.queue.get(True)
             if event:
@@ -38,7 +40,15 @@ class Downloader(threading.Thread):
         dst = path.join(Config().get("core", "syncdir"), event.path)
         cachepath = path.join(Config().get("core", "cachedir"), event.hash)
 
-        #TODO downloaded files should probably be cached locally
+        #Check to see if this event's time is later than the latest
+        #modification time we have locally seen for this file. If it's not,
+        #simply return
+        res = self.database.execute("SELECT * FROM events WHERE localpath=? and modified>?",
+                                    (event.path, event.time))
+        newerEvent = next(res, None)
+        if newerEvent is not None:
+            return #receiver has already added this event to the database
+
         #TODO make sure deleted files are cached locally if they're not yet
             #stored online
         if event.type & events.EventType.DELETE != 0:

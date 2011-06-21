@@ -23,6 +23,7 @@ defaults = {"core.syncdir" : os.path.join(constants.homedir, "Asink"),
             "core.dbfile" : os.path.join(constants.dotdir, "events.db"),
             "core.cachedir" : os.path.join(constants.dotdir, "cache"),
             "core.storagemethod" : "ssh",
+            "core.timediff" : 0.0,
 
             #Asink server options
             "server.host" : "localhost",

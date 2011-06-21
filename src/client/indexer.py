@@ -19,6 +19,7 @@ from os import path, walk
 
 from shared.events import Event, EventType
 from config import Config
+import util
 
 class Indexer(threading.Thread):
     stopped = False
@@ -34,7 +35,7 @@ class Indexer(threading.Thread):
                 try:
                     e = Event(EventType.UPDATE | EventType.LOCAL)
                     e.path = relpath
-                    e.time = path.getmtime(filepath)
+                    e.time = path.getmtime(filepath) + util.time_diff()
                     self.hasher_queue.put(e, True)
                 except OSError:
                     logging.warning("Couldn't get a modification time for "

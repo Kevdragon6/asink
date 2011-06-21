@@ -20,6 +20,7 @@ import logging
 
 from shared import events
 from database import Database
+from time import time
 
 local = threading.local()
 local.database = Database()
@@ -27,6 +28,10 @@ local.database = Database()
 class WebHandler(tornado.web.RequestHandler):
     def get(self):
         self.write("Web interface not yet implemented, sorry\n")
+
+class TimeSyncHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write(str(time()))
 
 class UpdatesMixin(object):
     waiters = {}

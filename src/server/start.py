@@ -25,12 +25,13 @@ import tornado.web
 sys.path.append(os.path.join(os.getcwd(), "../"))
 
 from database import Database
-from handlers import WebHandler, EventsHandler, PollingHandler
+from handlers import WebHandler, EventsHandler, PollingHandler, TimeSyncHandler
 
 application = tornado.web.Application([
     (r"/", WebHandler),
     (r"/api/?", EventsHandler),
     (r"/api/updates/([0-9]+)", PollingHandler),
+    (r"/api/timesync/?", TimeSyncHandler),
 ])
 
 def setup_logging():
