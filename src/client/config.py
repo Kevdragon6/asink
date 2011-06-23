@@ -34,6 +34,12 @@ defaults = {"core.syncdir" : os.path.join(constants.homedir, "Asink"),
             "ssh.port" : 22,
             "ssh.username" : "asinkuser",
             "ssh.basepath" : "/opt/asink"
+
+            #S3-related options (only necessary if core.storagemethod is s3)
+            "s3.host" : "s3.amazonaws.com",
+            "s3.bucket" : "asink",
+            "s3.id" : "",
+            "s3.secretkey" : ""
            }
 
 class _Config:

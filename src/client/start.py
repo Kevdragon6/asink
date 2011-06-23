@@ -29,6 +29,7 @@ import constants
 from config import Config
 
 from storage.ssh import SSHStorage
+from storage.s3 import S3Storage
 
 import watcher
 from indexer import Indexer
@@ -107,6 +108,12 @@ def setup_storage():
         username = Config().get("ssh", "username")
         basepath = Config().get("ssh", "basepath")
         return SSHStorage(host, username, basepath, port)
+    elif method == "s3":
+        host = Config().get("s3", "host")
+        bucket = Config().get("s3", "bucket")
+        id = Config().get("s3", "id")
+        secretkey = Config().get("s3", "secretkey")
+        return S3Storage(host, bucket, id, secretkey)
     #TODO handle error if method isn't valid or setup right
 
 def setup_signals():
