@@ -113,7 +113,8 @@ def setup_storage():
         bucket = Config().get("s3", "bucket")
         id = Config().get("s3", "id")
         secretkey = Config().get("s3", "secretkey")
-        return S3Storage(host, bucket, id, secretkey)
+        https = Config().get("s3", "https") not in ["no", "No", "NO", ""]
+        return S3Storage(host, bucket, id, secretkey, https=https)
     #TODO handle error if method isn't valid or setup right
 
 def setup_signals():

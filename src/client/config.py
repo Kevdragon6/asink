@@ -39,7 +39,8 @@ defaults = {"core.syncdir" : os.path.join(constants.homedir, "Asink"),
             "s3.host" : "s3.amazonaws.com",
             "s3.bucket" : "asink",
             "s3.id" : "",
-            "s3.secretkey" : ""
+            "s3.secretkey" : "",
+            "s3.https" : "yes"
            }
 
 class _Config:

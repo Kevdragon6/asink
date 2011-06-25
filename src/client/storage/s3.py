@@ -20,18 +20,19 @@ import time
 import base64
 import hmac
 import mimetypes
-from httplib import HTTPSConnection
+from httplib import HTTPConnection, HTTPSConnection
 import os
 
 class S3Storage:
     """Provides an s3-based backing store. Based on the documentation available
     online at
     http://docs.amazonwebservices.com/AmazonS3/latest/dev/index.html?RESTAuthentication.html"""
-    def __init__(self, host, bucket, id, secret_key):
+    def __init__(self, host, bucket, id, secret_key, https=True):
         self.host = host
         self.bucket = bucket
         self.id = id
         self.secret_key = secret_key
+        self.use_https = https
 
         #TODO make sure bucket works
 
@@ -54,7 +55,7 @@ class S3Storage:
         headers = {"Date": date,
                    "Content-Type": content_type,
                    "authorization": "AWS %s:%s" % (self.id, signature)}
-        conn = HTTPSConnection(self.host)
+        conn = HTTPSConnection(self.host) if self.use_https else HTTPConnection(self.host)
         conn.request("PUT", canonicalized_resource, body, headers)
         response = conn.getresponse()
         body.close()
@@ -71,7 +72,7 @@ class S3Storage:
         signature = get_signature("GET", "", "", date, "", canonicalized_resource, self.secret_key)
         headers = {"Date": date,
                    "authorization": "AWS %s:%s" % (self.id, signature)}
-        conn = HTTPSConnection(self.host)
+        conn = HTTPSConnection(self.host) if self.use_https else HTTPConnection(self.host)
         conn.request("GET", canonicalized_resource, "", headers)
         response = conn.getresponse()
         if response.status is not 200:
