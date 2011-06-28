@@ -84,11 +84,9 @@ def aengelize(pid_filename):
         with open(pid_filename,'r') as f:
             pid = int(f.read().strip())
             f.close()
-    except Exception as e:
-        logging.error("""Failed to open pid file at %s. Process
-                         already exited?""" % (pid_filename))
-        logging.error(type(e))
-        logging.error(e.message)
+    except:
+        logging.error("Failed to open pid file at %s. Process already exited?"
+                      % (pid_filename))
         sys.exit(0)
 
     #kill process
@@ -99,8 +97,6 @@ def aengelize(pid_filename):
             sleep(0.1)
         logging.error("Failed to stop process")
     except OSError, err:
-        if str(err).find("No such process") > 0:
-            os.remove(pid_filename)
-        else:
+        if str(err).find("No such process") <= 0:
             logging.error("Failed to stop process")
             sys.exit(1)

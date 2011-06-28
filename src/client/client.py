@@ -44,13 +44,8 @@ from downloader import Downloader
 def main():
     global indexer, hasher, uploader, sender, receiver, downloader
     setup_signals()
-
-    #TODO implement this
-    #start pyinotify listener, but just queue events until after indexing and syncing is done
-    #start long-polling w/ server for changes coming down, but    "    "    "
-    #pull changes from server
-    #run initial indexer
-    #begin handling incoming inotify events, and longpolling info from server
+    logging.info("Asink client started at %s" %
+                 (time.strftime("%a, %d %b %Y %X GMT", time.gmtime())))
 
     #create all threads which will be used to process events
     indexer = Indexer()
@@ -145,8 +140,10 @@ def sig_handler(signum, frame):
     sender.stop()
     downloader.stop()
     Config().write() #write any changes to the config out to the config file
+    logging.info("Asink client stopped at %s" %
+                 (time.strftime("%a, %d %b %Y %X GMT", time.gmtime())))
     sys.exit(0)
 
 if __name__ == "__main__":
-    setup_logging(True)
+    setup_logging()
     main()
