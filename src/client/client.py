@@ -28,6 +28,8 @@ sys.path.append(os.path.join(os.getcwd(), "../"))
 import constants
 from config import Config
 
+from shared.daemon import daemonize, aengelize
+
 from storage.ssh import SSHStorage
 from storage.s3 import S3Storage
 
@@ -41,7 +43,6 @@ from downloader import Downloader
 
 def main():
     global indexer, hasher, uploader, sender, receiver, downloader
-    setup_logging()
     setup_signals()
 
     #TODO implement this
@@ -95,10 +96,21 @@ def main():
     while True:
         time.sleep(86400) #= 24 hours just for fun
 
-def setup_logging():
-    #TODO log to a file
+def start():
+    setup_logging(log_to_file=True)
+    daemonize(Config().get("core", "pidfile"), main)
+
+def stop():
+    aengelize(Config().get("core", "pidfile"))
+
+def setup_logging(log_to_file=False):
     #TODO make log level a config option
-    logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
+    if log_to_file:
+        logging.basicConfig(format='%(levelname)s: %(message)s',
+                            level=logging.DEBUG,
+                            filename=Config().get("core", "logfile"))
+    else:
+        logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
 def setup_storage():
     method = Config().get("core", "storagemethod")
@@ -136,4 +148,5 @@ def sig_handler(signum, frame):
     sys.exit(0)
 
 if __name__ == "__main__":
+    setup_logging(True)
     main()

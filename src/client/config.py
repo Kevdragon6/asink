@@ -21,6 +21,8 @@ import constants
 
 defaults = {"core.syncdir" : os.path.join(constants.homedir, "Asink"),
             "core.dbfile" : os.path.join(constants.dotdir, "events.db"),
+            "core.logfile" : os.path.join(constants.dotdir, "asink.log"),
+            "core.pidfile" : os.path.join(constants.dotdir, "asink.pid"),
             "core.cachedir" : os.path.join(constants.dotdir, "cache"),
             "core.storagemethod" : "ssh",
             "core.timediff" : 0.0,
