@@ -18,7 +18,7 @@ import Queue
 import logging
 from tempfile import mkstemp
 from shutil import copy2, move
-from os import path, remove, makedirs, close, rmdir
+from os import path, remove, makedirs, close, rmdir, chmod
 
 from shared import events
 from config import Config
@@ -67,6 +67,10 @@ class Downloader(threading.Thread):
 
                 self.storage.get(tmppath, event.hash, event.storagekey)
                 #TODO handle failure of storage.get (will throw exception if fails)
+
+                #set the permissions, if we have them
+                if len(event.permissions.strip()) > 0:
+                    chmod(tmppath, int(event.permissions))
 
                 #move temp file to hashed cache file
                 move(tmppath, cachepath)

@@ -13,11 +13,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import threading
 import Queue
+import stat
 import hashlib
 import logging
-from os import path, close
 from tempfile import mkstemp
 from shutil import copy2, move
 
@@ -42,20 +43,24 @@ class Hasher(threading.Thread):
 
     def handle_event(self, event):
         try:
-            filepath = path.join(Config().get("core", "syncdir"), event.path)
+            filepath = os.path.join(Config().get("core", "syncdir"), event.path)
 
             if event.type & EventType.DELETE is 0:
                 #first, copy the file over to a temporary directory, get its hash,
                 #and then move it to the filename with that hash value
                 handle, tmppath = mkstemp(dir=Config().get("core", "cachedir"))
-                close(handle) #we don't really want it open, we just want a good name
+                os.close(handle) #we don't really want it open, we just want a good name
                 copy2(filepath, tmppath)
+
+                #get the mode of the file
+                stats = os.stat(filepath)
+                event.permissions = str(stat.S_IMODE(stats.st_mode))
 
                 event.hash = hash(tmppath)
                 logging.debug("HASHED  "+str(event))
 
                 #move tmp file to hash-named file in cache directory
-                cachepath = path.join(Config().get("core", "cachedir"), event.hash)
+                cachepath = os.path.join(Config().get("core", "cachedir"), event.hash)
                 move(tmppath, cachepath)
             else:
                 #if the file doesn't exist and we're a delete event, just drop it
