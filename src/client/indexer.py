@@ -36,7 +36,7 @@ class Indexer(threading.Thread):
                     e = Event(EventType.UPDATE | EventType.LOCAL)
                     e.path = relpath
                     e.time = path.getmtime(filepath) + util.time_diff()
-                    self.hasher_queue.put(e, True)
+                    self.uploader_queue.put(e, True)
                 except OSError:
                     logging.warning("Couldn't get a modification time for "
                                     +filepath+". Ignoring file")

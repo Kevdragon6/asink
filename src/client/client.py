@@ -55,6 +55,7 @@ def main():
 
     #create and set up queues which are used to pass events between threads
     uploader_queue = Queue()
+    indexer.uploader_queue = uploader_queue
     uploader.queue = uploader_queue
     #set on watcher when initialized
 
