@@ -29,7 +29,7 @@ class Database:
         self.cursor = self.conn.cursor()
         self.ensure_installed()
     def execute(self, query, args):
-        for i in range(10):
+        for i in range(3):
             try:
                 self.cursor.execute(query, args)
                 break
