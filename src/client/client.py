@@ -35,35 +35,28 @@ from storage.s3 import S3Storage
 
 import watcher
 from indexer import Indexer
-from hasher import Hasher
 from uploader import Uploader
 from sender import Sender
 from receiver import Receiver
 from downloader import Downloader
 
 def main():
-    global indexer, hasher, uploader, sender, receiver, downloader
+    global indexer, uploader, sender, receiver, downloader
     setup_signals()
     logging.info("Asink client started at %s" %
                  (time.strftime("%a, %d %b %Y %X GMT", time.gmtime())))
 
     #create all threads which will be used to process events
     indexer = Indexer()
-    hasher = Hasher()
     uploader = Uploader()
     sender = Sender()
     receiver = Receiver()
     downloader = Downloader()
 
     #create and set up queues which are used to pass events between threads
-    hasher_queue = Queue()
-    indexer.hasher_queue = hasher_queue
-    hasher.queue = hasher_queue
-    #set on watcher when initialized
-
     uploader_queue = Queue()
-    hasher.uploader_queue = uploader_queue
     uploader.queue = uploader_queue
+    #set on watcher when initialized
 
     sender_queue = Queue()
     uploader.sender_queue = sender_queue
@@ -79,9 +72,8 @@ def main():
     downloader.storage = storage
 
     #start all threads
-    watcher.start_watching(hasher_queue)
+    watcher.start_watching(uploader_queue)
     indexer.start()
-    hasher.start()
     uploader.start()
     sender.start()
     receiver.start()
@@ -130,12 +122,11 @@ def setup_signals():
     signal.signal(signal.SIGINT, sig_handler)
 
 def sig_handler(signum, frame):
-    global indexer, hasher, uploader, sender, receiver
+    global indexer, uploader, sender, receiver
     receiver.stop() #stop the receiver first, because it could take a while to
         #finish its last poll
     watcher.stop_watching()
     indexer.stop()
-    hasher.stop()
     uploader.stop()
     sender.stop()
     downloader.stop()

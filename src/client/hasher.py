@@ -13,85 +13,16 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import threading
-import Queue
-import stat
 import hashlib
-import logging
-from tempfile import mkstemp
-from shutil import copy2, move
 
-from database import Database
-from shared.events import Event, EventType
-from config import Config
-
-hashfn = hashlib.sha256
 blocksize = 2**15 #seems to be the fastest chunk size on my laptop
 
-class Hasher(threading.Thread):
-    stopped = False
-    def stop(self):
-        self.stopped = True
-        self.queue.put(None)
-    def run(self):
-        self.database = Database()
-        while not self.stopped:
-            event = self.queue.get(True)
-            if event:
-                self.handle_event(event)
-
-    def handle_event(self, event):
-        try:
-            filepath = os.path.join(Config().get("core", "syncdir"), event.path)
-
-            if event.type & EventType.DELETE is 0:
-                #first, copy the file over to a temporary directory, get its hash,
-                #and then move it to the filename with that hash value
-                handle, tmppath = mkstemp(dir=Config().get("core", "cachedir"))
-                os.close(handle) #we don't really want it open, we just want a good name
-                copy2(filepath, tmppath)
-
-                #get the mode of the file
-                stats = os.stat(filepath)
-                event.permissions = str(stat.S_IMODE(stats.st_mode))
-
-                event.hash = hash(tmppath)
-                logging.debug("HASHED  "+str(event))
-
-                #move tmp file to hash-named file in cache directory
-                cachepath = os.path.join(Config().get("core", "cachedir"), event.hash)
-                move(tmppath, cachepath)
-            else:
-                #if the file doesn't exist and we're a delete event, just drop it
-                res = self.database.execute("""SELECT * FROM events WHERE localpath=? 
-                                            LIMIT 1""", (event.path,))
-                exists = next(res, None)
-                if exists is None:
-                    return
-
-            #make sure the most recent version of this file doesn't match this one
-            #this protects against basically creating an infinite loop
-            res = self.database.execute("""SELECT * FROM events WHERE localpath=?
-                                        AND rev != 0 ORDER BY rev DESC LIMIT 1""", (event.path,))
-            latest = next(res, None)
-            if latest is not None:
-                e = Event(0)
-                e.fromseq(latest)
-                if e.hash == event.hash:
-                    #returning because hashes are equal
-                    return
-
-            #pass it along to the uploader now
-            self.uploader_queue.put(event)
-
-        except Exception as e:
-            logging.error("Hasher failed to hash: "+str(event)+"\n"+e.message)
-            logging.error(str(type(e))+": "+e.message)
-
-def hash(filename):
-    fn = hashfn()
-    with open(filename,'rb') as f:
-        for chunk in iter(lambda: f.read(blocksize), ''):
-             fn.update(chunk)
-    return fn.hexdigest()
+def hash(filename, hashfns=[hashlib.sha256]):
+    fns = []
+    for f in hashfns:
+        fns.append(f())
+    with open(filename,'rb') as ifile:
+        for chunk in iter(lambda: ifile.read(blocksize), ''):
+            for f in fns:
+                f.update(chunk)
+    return [f.hexdigest() for f in fns]

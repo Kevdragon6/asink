@@ -30,13 +30,13 @@ class EventHandler(pyinotify.ProcessEvent):
             e = Event(EventType.UPDATE | EventType.LOCAL)
             e.path = get_rel_path(filepath)
             e.time = time() + util.time_diff()
-            self.hasher_queue.put(e, True)
+            self.uploader_queue.put(e, True)
     def enqueue_delete(self, filepath):
         if not path.isdir(filepath):
             e = Event(EventType.DELETE | EventType.LOCAL)
             e.path = get_rel_path(filepath)
             e.time = time() + util.time_diff()
-            self.hasher_queue.put(e, True)
+            self.uploader_queue.put(e, True)
     def process_IN_CREATE(self, event):
         self.enqueue_modify(event.pathname)
     def process_IN_MODIFY(self, event):
@@ -51,11 +51,11 @@ class EventHandler(pyinotify.ProcessEvent):
 def get_rel_path(file):
     return path.relpath(file, Config().get("core", "syncdir"))
 
-def start_watching(hasher_queue):
+def start_watching(uploader_queue):
     global notifier, wm
     wm = pyinotify.WatchManager()  # Watch Manager
     eh = EventHandler()
-    eh.hasher_queue = hasher_queue
+    eh.uploader_queue = uploader_queue
 
     notifier = pyinotify.ThreadedNotifier(wm, eh)
     notifier.start()

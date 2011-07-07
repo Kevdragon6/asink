@@ -13,14 +13,18 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import threading
+import os
+import stat
 import Queue
-from os import path
 import logging
+import threading
+from tempfile import mkstemp
+from shutil import copy2, move
 
-from shared.events import EventType
+from hasher import hash
 from config import Config
 from database import Database
+from shared.events import Event, EventType
 
 class Uploader(threading.Thread):
     stopped = False
@@ -32,10 +36,43 @@ class Uploader(threading.Thread):
         while not self.stopped:
             event = self.queue.get(True)
             if event:
-                self.handle_event(event)
+                try:
+                    if event.type & EventType.UPDATE:
+                        self.handle_update_event(event)
+                    elif event.type & EventType.DELETE:
+                        self.handle_delete_event(event)
+                except Exception as e:
+                    logging.error("Uploader failed: "+str(event)+"\n"+e.message)
+                    logging.error(str(type(e))+": "+e.message)
 
-    def handle_event(self, event):
-        src = path.join(Config().get("core", "cachedir"), event.hash)
+    def handle_update_event(self, event):
+        filepath = os.path.join(Config().get("core", "syncdir"), event.path)
+
+        #first, copy the file over to a temporary directory, get its hash,
+        #upload it, and then move it to the filename with that hash value
+        handle, tmppath = mkstemp(dir=Config().get("core", "cachedir"))
+        os.close(handle) #we don't really want it open, we just want a good name
+        copy2(filepath, tmppath)
+
+        #get the mode of the file
+        stats = os.stat(filepath)
+        event.permissions = str(stat.S_IMODE(stats.st_mode))
+
+        #hash the temporary file
+        event.hash = hash(tmppath)[0]
+        logging.debug("HASHED  "+str(event))
+
+        #make sure the most recent version of this file doesn't match this one
+        #otherwise its pointless to re-upload it
+        res = self.database.execute("""SELECT * FROM events WHERE localpath=?
+                                    AND rev != 0 ORDER BY rev DESC LIMIT 1""", (event.path,))
+        latest = next(res, None)
+        if latest is not None:
+            e = Event(0)
+            e.fromseq(latest)
+            if e.hash == event.hash:
+                #returning because hashes are equal
+                return
 
         needsUpload = False
         if event.type & EventType.DELETE is 0:
@@ -46,13 +83,26 @@ class Uploader(threading.Thread):
         #add event to the database
         self.database.execute("INSERT INTO events VALUES (0,?,?,?,?,?,?,?)",
                               event.totuple()[1:])
-
         if needsUpload:
-            try:
-                event.storagekey = self.storage.put(src, event.hash)
-                #TODO handle failure of storage.put (will throw exception if fails)
-                self.sender_queue.put(event)
-            except Exception as e:
-                logging.error("Error uploading file: "+str(event)+"\n"+e.message)
-        else:
-            self.sender_queue.put(event)
+            event.storagekey = self.storage.put(tmppath, event.hash)
+            #TODO handle failure of storage.put (will throw exception if fails)
+
+        #move tmp file to hash-named file in cache directory
+        cachepath = os.path.join(Config().get("core", "cachedir"), event.hash)
+        move(tmppath, cachepath)
+
+        self.sender_queue.put(event)
+
+    def handle_delete_event(self, event):
+        #if the file doesn't exist and we're a delete event, just drop it
+        res = self.database.execute("""SELECT * FROM events WHERE localpath=? 
+                                    LIMIT 1""", (event.path,))
+        exists = next(res, None)
+        if exists is None:
+            return
+
+        #add event to the database
+        self.database.execute("INSERT INTO events VALUES (0,?,?,?,?,?,?,?)",
+                              event.totuple()[1:])
+
+        self.sender_queue.put(event)
