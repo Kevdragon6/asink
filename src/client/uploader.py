@@ -63,7 +63,7 @@ class Uploader(threading.Thread):
         logging.debug("HASHED  "+str(event))
 
         #make sure the most recent version of this file doesn't match this one
-        #otherwise its pointless to re-upload it
+        #otherwise it's pointless to re-upload it
         res = self.database.execute("""SELECT * FROM events WHERE localpath=?
                                     AND rev != 0 ORDER BY rev DESC LIMIT 1""", (event.path,))
         latest = next(res, None)
@@ -74,18 +74,16 @@ class Uploader(threading.Thread):
                 #returning because hashes are equal
                 return
 
-        needsUpload = False
-        if event.type & EventType.DELETE is 0:
-            res = self.database.execute("SELECT * FROM events WHERE hash=? AND rev!=0",
-                                       (event.hash,))
-            needsUpload = next(res, None) is None
+        res = self.database.execute("SELECT * FROM events WHERE hash=? AND rev!=0",
+                                   (event.hash,))
+        needsUpload = next(res, None) is None
+        if needsUpload:
+            event.storagekey = self.storage.put(tmppath, event.hash)
+            #TODO handle failure of storage.put (will throw exception if fails)
 
         #add event to the database
         self.database.execute("INSERT INTO events VALUES (0,?,?,?,?,?,?,?)",
                               event.totuple()[1:])
-        if needsUpload:
-            event.storagekey = self.storage.put(tmppath, event.hash)
-            #TODO handle failure of storage.put (will throw exception if fails)
 
         #move tmp file to hash-named file in cache directory
         cachepath = os.path.join(Config().get("core", "cachedir"), event.hash)
@@ -100,6 +98,16 @@ class Uploader(threading.Thread):
         exists = next(res, None)
         if exists is None:
             return
+
+        res = self.database.execute("""SELECT * FROM events WHERE localpath=?
+                                    AND rev != 0 ORDER BY rev DESC LIMIT 1""", (event.path,))
+        latest = next(res, None)
+        if latest is not None:
+            e = Event(0)
+            e.fromseq(latest)
+            if e.type & EventType.DELETE:
+                #returning because it was already deleted
+                return
 
         #add event to the database
         self.database.execute("INSERT INTO events VALUES (0,?,?,?,?,?,?,?)",
