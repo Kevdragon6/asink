@@ -21,6 +21,7 @@ from shutil import copy2, move
 from os import path, remove, makedirs, close, rmdir, chmod
 
 from shared import events
+from hasher import hash
 from config import Config
 from database import Database
 
@@ -67,6 +68,13 @@ class Downloader(threading.Thread):
 
                 self.storage.get(tmppath, event.hash, event.storagekey)
                 #TODO handle failure of storage.get (will throw exception if fails)
+
+                h = hash(tmppath)[0]
+                if h != event.hash:
+                    logging.error("    DOWN: hash doesn't match downloaded file event: "+str(event))
+                    logging.error("        : offending hash: "+h)
+                    return
+
 
                 #set the permissions, if we have them
                 if len(event.permissions.strip()) > 0:
