@@ -13,6 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import pyinotify
 from Queue import Queue
 from time import time
@@ -30,12 +31,14 @@ class EventHandler(pyinotify.ProcessEvent):
             e = Event(EventType.UPDATE | EventType.LOCAL)
             e.path = get_rel_path(filepath)
             e.time = time() + util.time_diff()
+            logging.info("WATCHER "+str(e))
             self.uploader_queue.put(e, True)
     def enqueue_delete(self, filepath):
         if not path.isdir(filepath):
             e = Event(EventType.DELETE | EventType.LOCAL)
             e.path = get_rel_path(filepath)
             e.time = time() + util.time_diff()
+            logging.info("WATCHER "+str(e))
             self.uploader_queue.put(e, True)
     def process_IN_CREATE(self, event):
         self.enqueue_modify(event.pathname)
