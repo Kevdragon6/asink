@@ -66,10 +66,14 @@ def add_watched_dir(directory):
     global wm
     wm.add_watch(directory, mask, rec=True, auto_add=True)
 
-def remove_watched_dir(wd):
+def remove_watched_dir(directory):
     global wm
-    wm.rm_watch(wd)
+    try:
+        wm.rm_watch(get_wd(directory), rec=True)
+    except:
+        pass
 
 def stop_watching():
     global notifier
+    remove_watched_dir(Config().get("core", "syncdir"))
     notifier.stop()
