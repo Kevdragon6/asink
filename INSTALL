@@ -1,8 +1,83 @@
-Installation requirements:
+INSTALL Instructions for Asink project
+Copyright (C) 2011 Aaron Lindsay <aaron@aclindsay.com>
+
+Created: June 5, 2011
+Last Updated: July 7, 2011
+
+Checking Out The Code
+==================
+
+$ git clone git://github.com/aclindsa/asink.git
+
+
+How To Run The Asink Server
+===========================
+
+1. Make sure you have the installation requirements met:
+
+Server Installation requirements:
 - python v2.7
-- pyinotify
 - sqlite3
 - Tornado and its dependencies (python-pycurl). Available at http://www.tornadoweb.org/.
 
-To profile:
+2. Change directories into the source you checked out above:
+$ cd asink/src/server/
+
+3. Run the server:
+$ ./start.py
+
+
+How To Install Asink Client
+===========================
+
+1. Make sure you have the installation requirements met:
+
+Client Installation requirements:
+- python v2.7
+- pyinotify
+- sqlite3
+Additional requirement to run profiling (not required unless you want to profile the execution of the code):
 - yappi (http://code.google.com/p/yappi/)
+
+2. Install the client database and ~/.asink directory
+$ cd asink/src/client/
+$ ./install.py
+
+3. Customize your ~/.asink/config.cfg to add the options you need. Its probably a good idea to start with one of the following (depending on your storage mechanism):
+
+Example S3 Configuration (requires Amazon S3 account and already-created bucket):
+== BEGIN ~/.asink/config.cfg ==
+[core]
+storagemethod = s3
+
+[s3]
+bucket = <AWS_BUCKET_NAME>
+id = <AWS_ID>
+host = s3.amazonaws.com
+secretkey = <AWS_SECRET_KEY>
+https = yes
+
+[server]
+host = <HOSTNAME/IP OF ASINK SERVER>
+== END ~/.asink/config.cfg ==
+
+Example SSH Configuration (requires server with passwordless SSH logins setup and read/write access to specified directory):
+== BEGIN ~/.asink/config.cfg ==
+[core]
+storagemethod = ssh
+
+[ssh]
+host = <SSH SERVER HOSTNAME>
+port = 22
+username = <SSH USERNAME>
+basepath = <PATH IN WHICH ASINK CAN STORE LOTS OF FILES>
+
+[server]
+host = <HOSTNAME/IP OF ASINK SERVER>
+== END ~/.asink/config.cfg ==
+
+4. To run the Asink client daemon:
+$ cd asink/src/client/
+$ ./asink start
+
+Notes: Output from the client goes to ~/.asink/asink.log by default. You can run `./asink stop` to stop the client daemon.
