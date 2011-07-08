@@ -33,12 +33,14 @@ class Database:
         for i in range(3):
             try:
                 self.cursor.execute(query, args)
+                self.commit()
                 break
             except sqlite3.OperationalError:
                 logging.error("sqlite3.OperationalError while running query:\n"
                               +query+" with args "+str(args))
                 self.rollback()
-        self.commit()
+                self.close()
+                self.__init__()
         return cursor_generator(self.cursor)
     def commit(self):
         self.conn.commit()
