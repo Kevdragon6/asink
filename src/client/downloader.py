@@ -92,7 +92,7 @@ class Downloader(threading.Thread):
             #make sure directory exists first
             dirname = path.dirname(dst)
             if not path.isdir(dirname):
-                makedirs(dirname)
+                makedirs(dirname, 0755)
 
             move(tmppath, dst)
         except Exception as e:
