@@ -36,6 +36,15 @@ class S3Storage:
 
         #TODO make sure bucket works
 
+    def putm(self, files):
+        """Stores multiple files on the server. 'files' is a sequence containing
+        localpath, hash pairs (in a tuple or other sequence) which would be
+        passed to put() normally"""
+        keys = []
+        for localpath, hash in files:
+            keys.append(self.put(localpath, hash))
+        return keys
+
     def put(self, localpath, hash, event=None):
         """Stores the file designated by localpath on the ssh server. Returns a
            string key the calling application should pass to get() to retrieve
@@ -63,6 +72,12 @@ class S3Storage:
             logging.error("S3 response: %d: %s\n%s" % (response.status,
                                           response.reason, response.read()))
         return ""
+
+    def getm(self, files):
+        """Gets multiple files, stored as a sequence of sequences, in much
+        the same way as putm"""
+        for localpath, hash, key in files:
+            self.get(localpath, hash, key)
 
     def get(self, localpath, hash, key, event=None):
         """Gets the file which was stored earlier with this localpath, hash, and
