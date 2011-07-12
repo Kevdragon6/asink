@@ -30,18 +30,19 @@ class Database:
         self.cursor = self.conn.cursor()
         self.ensure_installed()
     def execute(self, query, args):
-        for i in range(3):
+        for i in range(1000):
             try:
                 self.cursor.execute(query, args)
                 self.commit()
-                break
-            except sqlite3.OperationalError:
+                return cursor_generator(self.cursor)
+            except sqlite3.OperationalError as e:
+                if i is 9:
+                    raise
                 logging.error("sqlite3.OperationalError while running query:\n"
                               +query+" with args "+str(args))
                 self.rollback()
                 self.close()
                 self.__init__()
-        return cursor_generator(self.cursor)
     def commit(self):
         self.conn.commit()
     def rollback(self):
