@@ -18,6 +18,7 @@ import stat
 import Queue
 import logging
 import threading
+from itertools import izip
 from tempfile import mkstemp
 from shutil import copy2, move
 
@@ -26,24 +27,60 @@ from config import Config
 from database import Database
 from shared.events import Event, EventType
 
+MAX_TO_QUEUE = 100  #The maximum number of uploads to queue before uploading them
+
 class Uploader(threading.Thread):
     stopped = False
+    to_upload = []
+
     def stop(self):
         self.stopped = True
-        self.queue.put(None)
+
     def run(self):
         self.database = Database()
         while not self.stopped:
-            event = self.queue.get(True)
-            if event:
-                try:
-                    if event.type & EventType.UPDATE:
-                        self.handle_update_event(event)
-                    elif event.type & EventType.DELETE:
-                        self.handle_delete_event(event)
-                except Exception as e:
-                    logging.error("Uploader failed: "+str(event)+"\n"+e.message)
-                    logging.error(str(type(e))+": "+e.message)
+            try:
+                self.handle_event(self.queue.get(True, 0.2))
+            except Queue.Empty:
+                if len(self.to_upload) > 0:
+                    self.upload()
+            if len(self.to_upload) >= MAX_TO_QUEUE:
+                self.upload()
+
+    def upload(self):
+        try:
+            keys = self.storage.putm(((localpath, event.hash) for event, localpath in self.to_upload))
+            #TODO handle failure of storage.put (will throw exception if fails)
+
+            for s, key in izip(self.to_upload, keys):
+                event, tmppath = s
+                event.storagekey = key
+
+                #add event to the database
+                self.database.execute("INSERT INTO events VALUES (0,?,?,?,?,?,?,?)",
+                                      event.totuple()[1:])
+
+                #move tmp file to hash-named file in cache directory
+                cachepath = os.path.join(Config().get("core", "cachedir"), event.hash)
+                move(tmppath, cachepath)
+
+                self.sender_queue.put(event)
+
+            self.to_upload = []
+        except Exception as e:
+            print str(e)
+            print e
+            print type(e)
+
+    def handle_event(self, event):
+        try:
+            if event.type & EventType.UPDATE:
+                self.handle_update_event(event)
+            elif event.type & EventType.DELETE:
+                self.handle_delete_event(event)
+        except Exception as e:
+            logging.error("Uploader failed: "+str(event)+"\n"+e.message)
+            logging.error(str(type(e))+": "+e.message)
 
     def handle_update_event(self, event):
         filepath = os.path.join(Config().get("core", "syncdir"), event.path)
@@ -76,10 +113,16 @@ class Uploader(threading.Thread):
 
         res = self.database.execute("SELECT * FROM events WHERE hash=? AND rev!=0",
                                    (event.hash,))
-        needsUpload = next(res, None) is None
-        if needsUpload:
-            event.storagekey = self.storage.put(tmppath, event.hash)
-            #TODO handle failure of storage.put (will throw exception if fails)
+        sameHash = next(res, None)
+        #if this file isn't already uploaded, add it to the list to upload, and
+        #upload them in a batch when we have a chance
+        if sameHash is None:
+            self.to_upload.append((event, tmppath))
+            return
+
+        e = Event(0)
+        e.fromseq(sameHash)
+        event.storagekey = e.storagekey
 
         #add event to the database
         self.database.execute("INSERT INTO events VALUES (0,?,?,?,?,?,?,?)",
