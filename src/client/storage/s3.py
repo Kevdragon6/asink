@@ -39,16 +39,18 @@ class S3Storage:
     def putm(self, files):
         """Stores multiple files on the server. 'files' is a sequence containing
         localpath, hash pairs (in a tuple or other sequence) which would be
-        passed to put() normally"""
+        passed to put() normally. It is safe to assume that all the files being
+        uploaded have unique base filenames."""
         keys = []
         for localpath, hash in files:
             keys.append(self.put(localpath, hash))
         return keys
 
     def put(self, localpath, hash, event=None):
-        """Stores the file designated by localpath on the ssh server. Returns a
+        """Stores the file designated by localpath on the s3 server. Returns a
            string key the calling application should pass to get() to retrieve
-           the file."""
+           the file. It is safe to assume that all the files being uploaded have
+           unique base filenames."""
         content_type = "text/plain"
         try:
             content_type = mimetypes.guess_type(event.path)[0]
