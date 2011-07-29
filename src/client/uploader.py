@@ -68,9 +68,7 @@ class Uploader(threading.Thread):
 
             self.to_upload = []
         except Exception as e:
-            print str(e)
-            print e
-            print type(e)
+            logging.error("Uploader failed: "+str(type(e))+": "+e.message)
 
     def handle_event(self, event):
         try:
