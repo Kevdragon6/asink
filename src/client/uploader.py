@@ -107,6 +107,8 @@ class Uploader(threading.Thread):
             e.fromseq(latest)
             if e.hash == event.hash:
                 #returning because hashes are equal
+                #but first, remove the temporary file in the cache
+                os.remove(tmppath)
                 return
 
         res = self.database.execute("SELECT * FROM events WHERE hash=? AND rev!=0",
