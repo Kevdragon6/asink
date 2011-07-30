@@ -16,6 +16,8 @@
 import sqlite3
 import logging
 
+RETRIES=10
+
 def cursor_generator(cursor):
     results = cursor.fetchmany()
     while results:
@@ -25,20 +27,23 @@ def cursor_generator(cursor):
 
 class Database:
     def __init__(self):
-        self.conn = sqlite3.connect("asink.db")
-        self.cursor = self.conn.cursor()
+        self.connect()
         self.ensure_installed()
-    def execute(self, query, args):
-        for i in range(3):
+    def connect(self):
+        self.conn = sqlite3.connect("asink.db", isolation_level = None)
+    def execute(self, query, args=()):
+        for i in range(RETRIES):
             try:
-                self.cursor.execute(query, args)
-                break
+                cursor = self.conn.execute(query, args)
+                self.commit()
+                return cursor_generator(self.cursor)
             except sqlite3.OperationalError:
+                if i is RETRIES-1:
+                    raise
                 logging.error("sqlite3.OperationalError while running query:\n"+
                               query+" with args "+str(args))
                 self.rollback()
-        self.commit()
-        return cursor_generator(self.cursor)
+                self.conn.interrupt()
     def lastrowid(self):
         return self.cursor.lastrowid
     def commit(self):
@@ -48,9 +53,9 @@ class Database:
     def close(self):
         self.conn.close()
     def ensure_installed(self):
-        self.cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='events';")
-        if self.cursor.fetchone() is None:
-            self.cursor.execute("""CREATE TABLE events (
+        cursor = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='events';")
+        if cursor.fetchone() is None:
+            self.execute("""CREATE TABLE events (
                 rev INTEGER PRIMARY KEY,
                 user INTEGER,
                 type INTEGER,
@@ -60,5 +65,5 @@ class Database:
                 storagekey TEXT,
                 permissions INTEGER)""")
             #make index on rev and localpath
-            self.cursor.execute("CREATE INDEX IF NOT EXISTS revidx on events (rev)")
-            self.cursor.execute("CREATE INDEX IF NOT EXISTS pathidx on events (localpath)")
+            self.execute("CREATE INDEX IF NOT EXISTS revidx on events (rev)")
+            self.execute("CREATE INDEX IF NOT EXISTS pathidx on events (localpath)")
