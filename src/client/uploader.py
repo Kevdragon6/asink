@@ -87,7 +87,11 @@ class Uploader(threading.Thread):
         #upload it, and then move it to the filename with that hash value
         handle, tmppath = mkstemp(dir=Config().get("core", "cachedir"))
         os.close(handle) #we don't really want it open, we just want a good name
-        copy2(filepath, tmppath)
+        try:
+            copy2(filepath, tmppath)
+        except IOError:
+            logging.warning("Dropping update event because file was deleted before we could upload it: %s" % (str(event)))
+            return
 
         #get the mode of the file
         stats = os.stat(filepath)
