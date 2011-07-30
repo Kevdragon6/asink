@@ -20,7 +20,7 @@ from copy import deepcopy
 from itertools import izip
 from hashlib import sha256
 from os import path, makedirs
-from shutil import move, rmtree
+from shutil import copy2, rmtree
 
 class SSHStorage:
     """Provides an ssh-based backing store. Assumes username has key-based
@@ -97,9 +97,9 @@ class SSHStorage:
         #scp files into local directory
         args = ['scp', '-P', str(self.port)] + download_list + [dirname]
         self.shell(args)
-        #move them all to their corresponding localpath places
+        #copy them all to their corresponding localpath places before removing the directory
         for localpath, hash in izip(pathes, hashes):
-            move(path.join(dirname, hash), localpath)
+            copy2(path.join(dirname, hash), localpath)
         rmtree(dirname)
 
     def get(self, localpath, hash, key):
