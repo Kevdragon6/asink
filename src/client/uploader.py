@@ -139,6 +139,11 @@ class Uploader(threading.Thread):
         self.sender_queue.put(event)
 
     def handle_delete_event(self, event):
+        #make sure that all queued uploads are finished before we send a delete event
+        #this ensures that all events stay in-order
+        if len(self.to_upload) > 0:
+            self.upload()
+
         #if the file doesn't exist and we're a delete event, just drop it
         res = self.database.execute("""SELECT * FROM events WHERE localpath=? 
                                     LIMIT 1""", (event.path,))

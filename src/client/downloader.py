@@ -130,6 +130,11 @@ class Downloader(threading.Thread):
 
     def handle_delete_event(self, event):
         #TODO make sure deleted files are cached locally if they're not yet stored online
+
+        #make sure that all queued downloads are finished before we delete this file
+        #this ensures that all events stay in-order
+        if len(self.to_download) > 0:
+            self.download()
         try:
             to_delete = path.join(Config().get("core", "syncdir"), event.path)
             self.recursive_delete(to_delete)
